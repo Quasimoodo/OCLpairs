@@ -1,0 +1,1583 @@
+NL,OCL,"2~458出自UML文档，459~473出自SysML文档,474~485出自pssm,486~509出自出自博士论文：Using patterns to develop consistent design constraints, Wahler, Michael S.，510~511出自pssm,512~552出自fuml,553~623出自网站https://wiki.xmldation.com/User_Guides/Studio/5%3A_OCL_Rules"
+A Constraint cannot be applied to itself.,not constrainedElement->includes(self),
+Elements that must be owned must have an owner.,mustBeOwned() implies owner->notEmpty(),
+An element may not directly or indirectly own itself.,not allOwnedElements()->includes(self),
+An importedElement has either public visibility or no visibility at all.,importedElement.visibility <> null implies importedElement.visibility =VisibilityKind::public,
+The visibility of an ElementImport is either public or private.,visibility = VisibilityKind::public or visibility = VisibilityKind::private,
+The upper bound must be greater than or equal to the lower bound.,upperBound() >= lowerBound(),
+The lower bound must be a non-negative integer literal.,lowerBound() >= 0,
+"If it is not empty, then lowerValue must have an Integer value.",lowerValue <> null implies lowerValue.integerValue() <> null,
+"If it is not empty, then upperValue must have an UnlimitedNatural value.",upperValue <> null implies upperValue.unlimitedValue() <> null,
+"If a NamedElement is owned by something other than a Namespace, it does not have a visibility. One that is not owned by anything (and hence must be a Package, as this is the only kind of NamedElement that overrides mustBeOwned()) may have a visibility.",(namespace = null and owner <> null) implies visibility = null,
+"When there is a name, and all of the containing Namespaces have a name, the qualifiedName is constructed from the name of the NamedElement and the names of the containing Namespaces.",(name <> null and allNamespaces()->select(ns | ns.name = null)->isEmpty()) implies qualifiedName = allNamespaces()->iterate( ns : Namespace; agg: String = name | ns.name.concat(self.separator()).concat(agg)),
+"If there is no name, or one of the containing Namespaces has no name, there is no qualifiedName.",name=null or allNamespaces()->select( ns | ns.name=null )->notEmpty() implies qualifiedName = null,
+All the members of a Namespace are distinguishable within it.,membersAreDistinguishable(),
+A Namespace cannot have a PackageImport to itself.,packageImport.importedPackage.oclAsType(Namespace)->excludes(self),
+A Namespace cannot have an ElementImport to one of its ownedMembers.,elementImport.importedElement.oclAsType(Element)->excludesAll(ownedMember),
+The visibility of a PackageImport is either public or private.,visibility = VisibilityKind::public or visibility = VisibilityKind::private,
+A PackageableElement owned by a Namespace must have a visibility.,visibility = null implies namespace = null,
+Each parameterSubstitution must refer to a formal TemplateParameter of the target TemplateSignature.,parameterSubstitution->forAll(b | signature.parameter->includes(b.formal)),
+A TemplateBiinding contains at most one TemplateParameterSubstitution for each formal TemplateParameter of the target TemplateSignature.,signature.parameter->forAll(p | parameterSubstitution->select(b | b.formal = p)->size() <= 1),
+The default must be compatible with the formal TemplateParameter,default <> null implies default.isCompatibleWith(parameteredElement),
+"The actual ParameterableElement must be compatible with the formal TemplateParameter, e.g., the actual ParameterableElement for a Class TemplateParameter must be a Class.",actual->forAll(a | a.isCompatibleWith(formal.parameteredElement)),
+Parameters must own the ParameterableElements they parameter or those ParameterableElements must be owned by the TemplateableElement being templated.,template.ownedElement->includesAll(parameter.parameteredElement->asSet() - parameter.ownedParameteredElement->asSet()),
+The names of the parameters of a TemplateSignature are unique.,"parameter->forAll( p1, p2 | (p1 <> p2 and p1.parameteredElement.oclIsKindOf(NamedElement) and p2.parameteredElement.oclIsKindOf(NamedElement) ) implies p1.parameteredElement.oclAsType(NamedElement).name <> p2.parameteredElement.oclAsType(NamedElement).name)",
+"If a Duration has no expr, then it must have a single observation that is a DurationObservation.",expr = null implies (observation->size() = 1 and observation->forAll(oclIsKindOf(DurationObservation))),
+The multiplicity of firstEvent must be 2 if the multiplicity of constrainedElement is 2. Otherwise the multiplicity of firstEvent is 0.,if (constrainedElement->size() = 2) then (firstEvent->size() = 2) else (firstEvent->size() = 0) endif,
+A DurationConstraint has either one or two constrainedElements,constrainedElement->size() = 1 or constrainedElement->size()=2,
+The multiplicity of firstEvent must be 2 if the multiplicity of event is 2. Otherwise the multiplicity of firstEvent is 0.,if (event->size() = 2) then (firstEvent->size() = 2) else (firstEvent->size() = 0) endif,
+"If the language attribute is not empty, then the size of the body and language arrays must be the same.",language->notEmpty() implies (_'body'->size() = language->size()),
+The behavior must have exactly one return result parameter.,behavior <> null implies behavior.ownedParameter->select(direction=ParameterDirectionKind::return)->size() = 1,
+The behavior may only have non-stream in or return parameters.,behavior <> null implies behavior.ownedParameter->forAll(not isStream and (direction=ParameterDirectionKind::in or direction=ParameterDirectionKind::return)),
+All the operands of a StringExpression must be LiteralStrings,operand->forAll (oclIsKindOf (LiteralString)),
+"If a StringExpression has sub-expressions, it cannot have operands and vice versa (this avoids the problem of having to define a collating sequence between operands and subexpressions).",if subExpression->notEmpty() then operand->isEmpty() else operand->notEmpty() endif,
+A TimeConstraint has one constrainedElement.,constrainedElement->size() = 1,
+"If a TimeExpression has no expr, then it must have a single observation that is a TimeObservation.",expr = null implies (observation->size() = 1 and observation- >forAll(oclIsKindOf(TimeObservation))),
+When isAbstract is true there are no methods.,isAbstract implies method->isEmpty(),
+A Classifier may only specialize Classifiers of a valid type.,parents()->forAll(c | self.maySpecializeType(c)),
+"The Classifier that maps to a GeneralizationSet may neither be a specific nor a general Classifier in any of the Generalization relationships defined for that GeneralizationSet. In other words, a power type may not be an instance of itself nor may its instances also be its subclasses.",powertypeExtent->forAll( gs | gs.generalization->forAll( gen | not (gen.general = self) and not gen.general.allParents()->includes(self) and not (gen.specific = self) and not self.allParents()->includes(gen.specific))),
+The parents of a Classifier must be non-final.,parents()->forAll(not isFinalSpecialization),
+Generalization hierarchies must be directed and acyclical. A Classifier can not be both a transitively general and transitively specific Classifier of the same Classifier.,not allParents()->includes(self),
+"If allowSubstitutable is true, then there must be a constrainingClassifier.",allowSubstitutable implies constrainingClassifier->notEmpty(),
+"The parameteredElement has no direct features, and if constrainedElement is empty it has no generalizations.",parameteredElement.feature->isEmpty() and (constrainingClassifier->isEmpty() implies parameteredElement.allParents()->isEmpty()),
+"If the parameteredElement is not abstract, then the Classifier used as an argument shall not be abstract.",(not parameteredElement.isAbstract) implies templateParameterSubstitution.actual- >forAll(a | not a.oclAsType(Classifier).isAbstract),
+The argument to a ClassifierTemplateParameter is a Classifier.,templateParameterSubstitution.actual->forAll(a | a.oclIsKindOf(Classifier)),
+"If there are any constrainingClassifiers, then every argument must be the same as or a specialization of them, or if allowSubstitutable is true, then it can also be substitutable.",templateParameterSubstitution.actual->forAll( a | let arg : Classifier = a.oclAsType(Classifier) in constrainingClassifier->forAll( cc | arg = cc or arg.conformsTo(cc) or (allowSubstitutable and arg.isSubstitutableFor(cc)) ) ),
+"If there are any constrainingClassifiers, then the parameteredElement must be the same as or a specialization of them, or if allowSubstitutable is true, then it can also be substitutable.",constrainingClassifier->forAll( cc | parameteredElement = cc or parameteredElement.conformsTo(cc) or (allowSubstitutable and parameteredElement.isSubstitutableFor(cc)) ),
+Every Generalization associated with a particular GeneralizationSet must have the same general Classifier.,generalization->collect(general)->asSet()->size() <= 1,
+"The Classifier that maps to a GeneralizationSet may neither be a specific nor a general Classifier in any of the Generalization relationships defined for that GeneralizationSet. In other words, a power type may not be an instance of itself nor may its instances be its subclasses.",powertype <> null implies generalization->forAll( gen | not (gen.general = powertype) and not gen.general.allParents()->includes(powertype) and not (gen.specific = powertype) and not powertype.allParents()->includes(gen.specific) ),
+An InstanceSpecification can act as a DeployedArtifact if it represents an instance of an Artifact.,deploymentForArtifact->notEmpty() implies classifier->exists(oclIsKindOf(Artifact)),
+No more than one slot in an InstanceSpecification may have the same definingFeature.,classifier->forAll(c | (c.allSlottableFeatures()->forAll(f | slot->select(s | s.definingFeature = f)->size() <= 1))),
+"The definingFeature of each slot is a StructuralFeature related to a classifier of the InstanceSpecification, including direct attributes, inherited attributes, private attributes in generalizations, and memberEnds of Associations, but excluding redefined StructuralFeatures.",slot->forAll(s | classifier->exists (c | c.allSlottableFeatures()->includes (s.definingFeature))),
+An InstanceSpecification can act as a DeploymentTarget if it represents an instance of a Node and functions as a part in the internal structure of an encompassing Node.,deployment->notEmpty() implies classifier->exists(node | node.oclIsKindOf(Node) and Node.allInstances()->exists(n | n.part->exists(p | p.type = node))),
+"An Operation can have at most one return parameter; i.e., an owned parameter with the direction set to 'return.'",self.ownedParameter->select(direction = ParameterDirectionKind::return)->size() <= 1,
+A bodyCondition can only be specified for a query Operation.,bodyCondition <> null implies isQuery,
+"Only in and inout Parameters may have a delete effect. Only out, inout, and return Parameters may have a create effect.",(effect = ParameterEffectKind::delete implies (direction = ParameterDirectionKind::_'in' or direction = ParameterDirectionKind::inout)) and (effect = ParameterEffectKind::create implies (direction = ParameterDirectionKind::out or direction = ParameterDirectionKind::inout or direction = ParameterDirectionKind::return)),
+An input Parameter cannot be an exception.,isException implies (direction <> ParameterDirectionKind::_'in' and direction <> ParameterDirectionKind::inout),
+A Parameter may only be associated with a Connector end within the context of a Collaboration.,end->notEmpty() implies collaboration->notEmpty(),
+Reentrant behaviors cannot have stream Parameters.,(isStream and behavior <> null) implies not behavior.isReentrant,
+A Parameter cannot be a stream and exception at the same time.,not (isException and isStream),
+Parameters typed by DataTypes cannot have an effect.,(type.oclIsKindOf(DataType)) implies (effect = null),
+"The Parameters in a ParameterSet must all be inputs or all be outputs of the same parameterized entity, and the ParameterSet is owned by that entity.","parameter->forAll(p1, p2 | self.owner = p1.owner and self.owner = p2.owner and p1.direction = p2.direction)",
+"If a parameterized entity has input Parameters that are in a ParameterSet, then any inputs that are not in a ParameterSet must be streaming. Same for output Parameters.",((parameter->exists(direction = ParameterDirectionKind::_'in')) implies behavioralFeature.ownedParameter->select(p | p.direction = ParameterDirectionKind::_'in' and p.parameterSet->isEmpty())->forAll(isStream)) and ((parameter->exists(direction = ParameterDirectionKind::out)) implies behavioralFeature.ownedParameter->select(p | p.direction = ParameterDirectionKind::out and p.parameterSet->isEmpty())->forAll(isStream)),
+Two ParameterSets cannot have exactly the same set of Parameters.,"parameter->forAll(parameterSet->forAll(s1, s2 | s1->size() = s2->size() implies s1.parameter->exists(p | not s2.parameter->includes(p))))",
+Subsetting may only occur when the context of the subsetting property conforms to the context of the subsetted property.,subsettedProperty->notEmpty() implies (subsettingContext()->notEmpty() and subsettingContext()->forAll (sc | subsettedProperty->forAll(sp |sp.subsettingContext()->exists(c | sc.conformsTo(c))))),
+A derived union is read only.,isDerivedUnion implies isReadOnly,
+A multiplicity on the composing end of a composite aggregation must not have an upper bound greater than 1.,isComposite and association <> null implies opposite.upperBound() <= 1,
+A redefined Property must be inherited from a more general Classifier.,(redefinedProperty->notEmpty()) implies (redefinitionContext->notEmpty() and redefinedProperty->forAll(rp| ((redefinitionContext->collect(fc| fc.allParents()))->asSet())->collect(c| c.allFeatures())->asSet()->includes(rp))),
+"A subsetting Property may strengthen the type of the subsetted Property, and its upper bound may be less.",subsettedProperty->forAll(sp | self.type.conformsTo(sp.type) and ((self.upperBound()->notEmpty() and sp.upperBound()->notEmpty()) implies self.upperBound() <= sp.upperBound() )),
+A binding of a PropertyTemplateParameter representing an attribute must be to an attribute.,(self.isAttribute() and (templateParameterSubstitution->notEmpty()) implies (templateParameterSubstitution->forAll(ts | ts.formal.oclIsKindOf(Property) and ts.formal.oclAsType(Property).isAttribute()))),
+A derived union is derived.,isDerivedUnion implies isDerived,
+A Property can be a DeploymentTarget if it is a kind of Node and functions as a part in the internal structure of an encompassing Node.,deployment->notEmpty() implies owner.oclIsKindOf(Node) and Node.allInstances()- >exists(n | n.part->exists(p | p = self)),
+A Property may not subset a Property with the same name.,subsettedProperty->forAll(sp | sp.name <> name),
+"If a Property is a classifier-owned end of a binary Association, its owner must be the type of the opposite end.",(opposite->notEmpty() and owningAssociation->isEmpty()) implies classifier = opposite.type,
+All qualified Properties must be Association ends,qualifier->notEmpty() implies association->notEmpty(),
+A redefining element must be consistent with each redefined element.,redefinedElement->forAll(re | re.isConsistentWith(self)),
+A RedefinableElement can only redefine non-leaf RedefinableElements.,redefinedElement->forAll(re | not re.isLeaf),
+At least one of the redefinition contexts of the redefining element must be a specialization of at least one of the redefinition contexts for each redefined element.,redefinedElement->forAll(re | self.isRedefinitionContextValid(re)),
+"If any of the parent Classifiers are a template, then the extendedSignature must include the signature of that Classifier.",classifier.allParents()->forAll(c | c.ownedTemplateSignature->notEmpty() implies self->closure(extendedSignature)->includes(c.ownedTemplateSignature)),
+"If a behavior is classifier behavior, it does not have a specification.",classifierBehavior->notEmpty() implies classifierBehavior.specification->isEmpty(),
+immutable,ownedAttribute->forAll(isReadOnly),
+The visibility of all Features owned by an Interface must be public.,feature->forAll(visibility = VisibilityKind::public),
+A Reception has the same name as its signal,name = signal.name,
+"A Reception's parameters match the ownedAttributes of its signal by name, type, and multiplicity",signal.ownedAttribute->size() = ownedParameter->size() and Sequence{1..signal.ownedAttribute->size()}->forAll( i | ownedParameter->at(i).direction = ParameterDirectionKind::_'in' and ownedParameter->at(i).name = signal.ownedAttribute->at(i).name and ownedParameter->at(i).type = signal.ownedAttribute >at(i).type and ownedParameter->at(i).lowerBound() = signal.ownedAttribute->at(i).lowerBound() and ownedParameter->at(i).upperBound() = signal.ownedAttribute->at(i).upperBound()),
+An Association specializing another Association has the same number of ends as the other Association.,parents()->select(oclIsKindOf(Association)).oclAsType(Association)->forAll(p | p.memberEnd->size() = self.memberEnd->size()),
+"When an Association specializes another Association, every end of the specific Association corresponds to an end of the general Association, and the specific end reaches the same type or a subtype of the corresponding general end.",Sequence{1..memberEnd->size()}-> forAll(i | general->select(oclIsKindOf(Association)).oclAsType(Association)-> forAll(ga | self.memberEnd->at(i).type.conformsTo(ga.memberEnd->at(i).type))),
+Only binary Associations can be aggregations.,memberEnd->exists(aggregation <> AggregationKind::none) implies (memberEnd->size() = 2 and memberEnd->exists(aggregation = AggregationKind::none)),
+Ends of Associations with more than two ends must be owned by the Association itself.,memberEnd->size() > 2 implies ownedEnd->includesAll(memberEnd),
+An AssociationClass cannot be defined between itself and something else.,self.endType()->excludes(self) and self.endType()->collect(et| et.oclAsType(Classifier).allParents())->flatten()->excludes(self),
+The owned attributes and owned ends of an AssociationClass are disjoint.,ownedAttribute->intersection(ownedEnd)->isEmpty(),
+Only an active Class may own Receptions and have a classifierBehavior.,not isActive implies (ownedReception->isEmpty() and classifierBehavior = null),
+All the client elements of a roleBinding are in one Classifier and all supplier elements of a roleBinding are in one Collaboration.,"roleBinding->collect(client)->forAll(ne1, ne2 |
+ne1.oclIsKindOf(ConnectableElement) and ne2.oclIsKindOf(ConnectableElement) and
+let ce1 : ConnectableElement = ne1.oclAsType(ConnectableElement), ce2 :
+ConnectableElement = ne2.oclAsType(ConnectableElement) in
+ce1.structuredClassifier = ce2.structuredClassifier)
+and
+roleBinding->collect(supplier)->forAll(ne1, ne2 |
+ne1.oclIsKindOf(ConnectableElement) and ne2.oclIsKindOf(ConnectableElement) and
+let ce1 : ConnectableElement = ne1.oclAsType(ConnectableElement), ce2 :
+ConnectableElement = ne2.oclAsType(ConnectableElement) in
+ce1.collaboration = ce2.collaboration)",
+Every collaborationRole in the Collaboration is bound within the CollaborationUse.,type.collaborationRole->forAll(role | roleBinding->exists(rb | rb.supplier->includes(role))),
+"Connectors in a Collaboration typing a CollaborationUse must have corresponding Connectors between elements bound in the context Classifier, and these corresponding Connectors must have the same or more general type than the Collaboration Connectors.","type.ownedConnector->forAll(connector |
+let rolesConnectedInCollab : Set(ConnectableElement) = connector.end.role->asSet(),
+relevantBindings : Set(Dependency) = roleBinding->select(rb | rb.supplier-
+>intersection(rolesConnectedInCollab)->notEmpty()),
+boundRoles : Set(ConnectableElement) = relevantBindings-
+>collect(client.oclAsType(ConnectableElement))->asSet(),
+contextClassifier : StructuredClassifier = boundRoles-
+>any(true).structuredClassifier->any(true) in
+contextClassifier.ownedConnector->exists( correspondingConnector |
+correspondingConnector.end.role->forAll( role | boundRoles->includes(role) )
+and (connector.type->notEmpty() and correspondingConnector.type->notEmpty())
+implies connector.type->forAll(conformsTo(correspondingConnector.type)) )
+)",
+A Component cannot nest Classifiers.,nestedClassifier->isEmpty(),
+A Component nested in a Class cannot have any packaged elements.,nestingClass <> null implies packagedElement->isEmpty(),
+"The types of the ConnectableElements that the ends of a Connector are attached to must conform to the types of the ends of the Association that types the Connector, if any.","type<>null implies
+let noOfEnds : Integer = end->size() in
+(type.memberEnd->size() = noOfEnds) and Sequence{1..noOfEnds}->forAll(i | end-
+>at(i).role.type.conformsTo(type.memberEnd->at(i).type))",
+"The ConnectableElements attached as roles to each ConnectorEnd owned by a Connector must be owned or inherited roles of the Classifier that owned the Connector, or they must be Ports of such roles.","structuredClassifier <> null
+and
+end->forAll( e | structuredClassifier.allRoles()->includes(e.role)
+or
+e.role.oclIsKindOf(Port) and structuredClassifier.allRoles()->includes(e.partWithPort))",
+"If a ConnectorEnd references a partWithPort, then the role must be a Port that is defined or inherited by the type of the partWithPort.","partWithPort->notEmpty() implies
+(role.oclIsKindOf(Port) and partWithPort.type.oclAsType(Namespace).member->includes(role))",
+"If a ConnectorEnd is attached to a Port of the containing Classifier, partWithPort will be empty.",(role.oclIsKindOf(Port) and role.owner = connector.owner) implies partWithPort->isEmpty(),
+"The multiplicity of the ConnectorEnd may not be more general than the multiplicity of the corresponding end of the Association typing the owning Connector, if any.",self.compatibleWith(definingEnd),
+The Property held in self.partWithPort must not be a Port.,partWithPort->notEmpty() implies not partWithPort.oclIsKindOf(Port),
+Port.aggregation must be composite.,aggregation = AggregationKind::composite,
+A defaultValue for port cannot be specified when the type of the Port is an Interface.,type.oclIsKindOf(Interface) implies defaultValue->isEmpty(),
+All Ports are owned by an EncapsulatedClassifier.,owner = encapsulatedClassifier,
+The non-owned end of an Extension is typed by a Class.,metaclassEnd()->notEmpty() and metaclassEnd().type.oclIsKindOf(Class),
+"An Extension is binary, i.e., it has only two memberEnds.",memberEnd->size() = 2,
+The multiplicity of ExtensionEnd is 0..1 or 1.,(lowerBound() = 0 or lowerBound() = 1) and upperBound() = 1,
+The aggregation of an ExtensionEnd is composite.,self.aggregation = AggregationKind::composite,
+The non-owned end of an Extension is typed by a Class.,metaclassEnd()->notEmpty() and metaclassEnd().type.oclIsKindOf(Class),
+"An Extension is binary, i.e., it has only two memberEnds.",memberEnd->size() = 2,
+The multiplicity of ExtensionEnd is 0..1 or 1.,(lowerBound() = 0 or lowerBound() = 1) and upperBound() = 1,
+The aggregation of an ExtensionEnd is composite.,self.aggregation = AggregationKind::composite,
+"If an element that is owned by a package has visibility, it is public or private.","packagedElement->forAll(e | e.visibility<> null implies e.visibility =
+VisibilityKind::public or e.visibility = VisibilityKind::private)",
+An element imported as a metaclassReference is not specialized or generalized in a Profile.,"metaclassReference.importedElement->
+select(c | c.oclIsKindOf(Classifier) and
+(c.oclAsType(Classifier).allParents()->collect(namespace)->includes(self)))-
+>isEmpty()
+and
+packagedElement->
+select(oclIsKindOf(Classifier))->collect(oclAsType(Classifier).allParents())->
+intersection(metaclassReference.importedElement->select(oclIsKindOf(Classifier))-
+>collect(oclAsType(Classifier)))->isEmpty()",
+All elements imported either as metaclassReferences or through metamodelReferences are members of the same base reference metamodel.,"metamodelReference.importedPackage.elementImport.importedElement.allOwningPackages()->
+union(metaclassReference.importedElement.allOwningPackages() )->notEmpty()",
+Stereotypes may only participate in binary associations.,ownedAttribute.association->forAll(memberEnd->size()=2),
+A Stereotype may only generalize or specialize another Stereotype.,"allParents()->forAll(oclIsKindOf(Stereotype))
+and Classifier.allInstances()->forAll(c | c.allParents()->exists(oclIsKindOf(Stereotype))
+implies c.oclIsKindOf(Stereotype))",
+"Where a stereotype’s property is an association end for an association other than a kind of extension, and the other end is not a stereotype, the other end must be owned by the association itself.","ownedAttribute
+->select(association->notEmpty() and not association.oclIsKindOf(Extension) and not
+type.oclIsKindOf(Stereotype))
+->forAll(opposite.owner = association)",
+There may be at most one Behavior for a given pairing of BehavioredClassifier (as owner of the Behavior) and BehavioralFeature (as specification of the Behavior).,"specification <> null implies _'context'.ownedBehavior-
+>select(specification=self.specification)->size() = 1",
+"If a Behavior has a specification BehavioralFeature, then it must have the same number of ownedParameters as
+its specification. The Behavior Parameters must also ""match"" the BehavioralParameter Parameters, but the
+exact requirements for this matching are not formalized.","specification <> null implies ownedParameter->size() = specification.ownedParameter-
+>size()",
+"The specification BehavioralFeature must be a feature (possibly inherited) of the context BehavioredClassifier
+of the Behavior.", _'context'.feature->includes(specification),
+A FunctionBehavior has at least one output Parameter.,"self.ownedParameter->
+select(p | p.direction = ParameterDirectionKind::out or p.direction=
+ParameterDirectionKind::inout or p.direction= ParameterDirectionKind::return)->size() >= 1",
+"The types of the ownedParameters are all DataTypes, which may not nest anything but other DataTypes.","ownedParameter->forAll(p | p.type <> null and
+p.type.oclIsTypeOf(DataType) and hasAllDataTypeAttributes(p.type.oclAsType(DataType)))",
+The ValueSpecification when must return a non-negative Integer.,when.integerValue() >= 0,
+"If a Trigger specifies one or more ports, the event of the Trigger must be a MessageEvent.",port->notEmpty() implies event.oclIsKindOf(MessageEvent),
+The exit Pseudostates must be Pseudostates with kind exitPoint.,exit->forAll(kind = PseudostateKind::exitPoint),
+The entry Pseudostates must be Pseudostates with kind entryPoint.,entry->forAll(kind = PseudostateKind::entryPoint),
+A FinalState has no exit Behavior.,exit->isEmpty(),
+A FinalState cannot have any outgoing Transitions.,outgoing->size() = 0,
+A FinalState cannot have Regions.,region->size() = 0,
+A FinalState cannot reference a submachine.,submachine->isEmpty(),
+A FinalState has no entry Behavior.,entry->isEmpty(),
+A FinalState has no state (doActivity) Behavior.,doActivity->isEmpty(),
+"A ProtocolStateMachine must only have a Classifier context, not a BehavioralFeature context.",_'context' <> null and specification = null,
+ProtocolStateMachines cannot have deep or shallow history Pseudostates.,"region->forAll (r | r.subvertex->forAll (v | v.oclIsKindOf(Pseudostate) implies
+((v.oclAsType(Pseudostate).kind <> PseudostateKind::deepHistory) and
+(v.oclAsType(Pseudostate).kind <> PseudostateKind::shallowHistory))))",
+"The states of a ProtocolStateMachine cannot have entry, exit, or do activity Behaviors.","region->forAll(r | r.subvertex->forAll(v | v.oclIsKindOf(State) implies
+(v.oclAsType(State).entry->isEmpty() and v.oclAsType(State).exit->isEmpty() and
+v.oclAsType(State).doActivity->isEmpty())))",
+All Transitions of a ProtocolStateMachine must be ProtocolTransitions.,region->forAll(r | r.transition->forAll(t | t.oclIsTypeOf(ProtocolTransition))),
+"If a ProtocolTransition refers to an Operation (i.e., has a CallEvent trigger corresponding to an Operation), then
+that Operation should apply to the context Classifier of the StateMachine of the ProtocolTransition.","if (referred()->notEmpty() and containingStateMachine()._'context'->notEmpty()) then
+containingStateMachine()._'context'.oclAsType(BehavioredClassifier).allFeatures()-
+>includesAll(referred())
+else true endif",
+A ProtocolTransition never has associated Behaviors,effect = null,
+A ProtocolTransition always belongs to a ProtocolStateMachine.,container.belongsToPSM(),
+All transitions outgoing a fork vertex must target states in different regions of an orthogonal state.,"(kind = PseudostateKind::fork) implies
+-- for any pair of outgoing transitions there exists an orthogonal state which contains the
+targets of these transitions
+-- such that these targets belong to different regions of that orthogonal state
+outgoing->forAll(t1:Transition, t2:Transition | let contState:State =
+containingStateMachine().LCAState(t1.target, t2.target) in
+((contState <> null) and (contState.region
+->exists(r1:Region, r2: Region | (r1 <> r2) and t1.target.isContainedInRegion(r1)
+and t2.target.isContainedInRegion(r2)))))",
+"In a complete statemachine, a choice Vertex must have at least one incoming and one outgoing Transition.","(kind = PseudostateKind::choice) implies (incoming->size() >= 1 and outgoing->size() >=
+1)",
+"The outgoing Transition from an initial vertex may have a behavior, but not a trigger or a guard.","(kind = PseudostateKind::initial) implies (outgoing.guard = null and outgoing.trigger-
+>isEmpty())",
+"In a complete StateMachine, a join Vertex must have at least two incoming Transitions and exactly one
+outgoing Transition.",(kind = PseudostateKind::join) implies (outgoing->size() = 1 and incoming->size() >= 2),
+"In a complete StateMachine, a junction Vertex must have at least one incoming and one outgoing Transition.","(kind = PseudostateKind::junction) implies (incoming->size() >= 1 and outgoing->size()
+>= 1)",
+History Vertices can have at most one outgoing Transition.,"((kind = PseudostateKind::deepHistory) or (kind = PseudostateKind::shallowHistory))
+implies (outgoing->size() <= 1)",
+An initial Vertex can have at most one outgoing Transition.,(kind = PseudostateKind::initial) implies (outgoing->size() <= 1),
+"In a complete StateMachine, a fork Vertex must have at least two outgoing Transitions and exactly one
+incoming Transition.",(kind = PseudostateKind::fork) implies (incoming->size() = 1 and outgoing->size() >= 2),
+All Transitions incoming a join Vertex must originate in different Regions of an orthogonal State.,"(kind = PseudostateKind::join) implies
+-- for any pair of incoming transitions there exists an orthogonal state which contains the
+source vetices of these transitions
+-- such that these source vertices belong to different regions of that orthogonal state
+incoming->forAll(t1:Transition, t2:Transition | let contState:State =
+containingStateMachine().LCAState(t1.source, t2.source) in
+((contState <> null) and (contState.region
+->exists(r1:Region, r2: Region | (r1 <> r2) and t1.source.isContainedInRegion(r1)
+and t2.source.isContainedInRegion(r2)))))",
+A Region can have at most one deep history Vertex.,"self.subvertex->select (oclIsKindOf(Pseudostate))->collect(oclAsType(Pseudostate))->
+select(kind = PseudostateKind::deepHistory)->size() <= 1",
+A Region can have at most one shallow history Vertex.,"subvertex->select(oclIsKindOf(Pseudostate))->collect(oclAsType(Pseudostate))->
+select(kind = PseudostateKind::shallowHistory)->size() <= 1",
+"If a Region is owned by a StateMachine, then it cannot also be owned by a State and vice versa.","(stateMachine <> null implies state = null) and (state <> null implies stateMachine =
+null)",
+A Region can have at most one initial Vertex.,"self.subvertex->select (oclIsKindOf(Pseudostate))->collect(oclAsType(Pseudostate))->
+select(kind = PseudostateKind::initial)->size() <= 1",
+Only entry or exit Pseudostates can serve as connection points.,"connectionPoint->forAll(kind = PseudostateKind::entryPoint or kind =
+PseudostateKind::exitPoint)",
+Only submachine States can have connection point references.,isSubmachineState implies connection->notEmpty( ) ,
+Only composite States can have entry or exit Pseudostates defined.,connectionPoint->notEmpty() implies isComposite,
+"The connection point references used as destinations/sources of Transitions associated with a submachine State
+must be defined as entry/exit points in the submachine StateMachine.","self.isSubmachineState implies (self.connection->forAll (cp |
+cp.entry->forAll (ps | ps.stateMachine = self.submachine) and
+cp.exit->forAll (ps | ps.stateMachine = self.submachine)))",
+A State is not allowed to have both a submachine and Regions.,isComposite implies not isSubmachineState,
+The connection points of a StateMachine are Pseudostates of kind entry point or exit point.,"connectionPoint->forAll (kind = PseudostateKind::entryPoint or kind =
+PseudostateKind::exitPoint)",
+The Classifier context of a StateMachine cannot be an Interface.,_'context' <> null implies not _'context'.oclIsKindOf(Interface),
+A StateMachine as the method for a BehavioralFeature cannot have entry/exit connection points.,specification <> null implies connectionPoint->isEmpty(),
+"The context Classifier of the method StateMachine of a BehavioralFeature must be the Classifier that owns the
+BehavioralFeature.","specification <> null implies ( _'context' <> null and
+specification.featuringClassifier->exists(c | c = _'context'))",
+A Transition with kind external can source any Vertex except entry points.,"(kind = TransitionKind::external) implies
+not (source.oclIsKindOf(Pseudostate) and source.oclAsType(Pseudostate).kind =
+PseudostateKind::entryPoint)",
+A join segment must not have Guards or Triggers.,"(target.oclIsKindOf(Pseudostate) and target.oclAsType(Pseudostate).kind =
+PseudostateKind::join) implies (guard = null and trigger->isEmpty())",
+"A Transition with kind internal must have a State as its source, and its source and target must be equal.","(kind = TransitionKind::internal) implies
+(source.oclIsKindOf (State) and source = target)",
+Transitions outgoing Pseudostates may not have a Trigger.,"source.oclIsKindOf(Pseudostate) and (source.oclAsType(Pseudostate).kind <>
+PseudostateKind::initial) implies trigger->isEmpty()",
+A join segment must always originate from a State.,"(target.oclIsKindOf(Pseudostate) and target.oclAsType(Pseudostate).kind =
+PseudostateKind::join) implies (source.oclIsKindOf(State))",
+A fork segment must always target a State.,"(source.oclIsKindOf(Pseudostate) and source.oclAsType(Pseudostate).kind =
+PseudostateKind::fork) implies (target.oclIsKindOf(State))",
+A Transition with kind local must have a composite State or an entry point as its source.,"(kind = TransitionKind::local) implies
+((source.oclIsKindOf (State) and source.oclAsType(State).isComposite) or
+(source.oclIsKindOf (Pseudostate) and source.oclAsType(Pseudostate).kind =
+PseudostateKind::entryPoint))",
+An initial Transition at the topmost level Region of a StateMachine that has no Trigger.,(source.oclIsKindOf(Pseudostate) and container.stateMachine->notEmpty()) implies trigger->isEmpty(),
+A fork segment must not have Guards or Triggers.,"(source.oclIsKindOf(Pseudostate) and source.oclAsType(Pseudostate).kind =
+PseudostateKind::fork) implies (guard = null and trigger->isEmpty())",
+The source and target Vertices of a Transition must be contained in the same StateMachine as the Transition,"let stateMachine = self.containingStateMachine() in
+source.containingStateMachine() = stateMachine and
+target.containingStateMachine() = stateMachine",
+A Parameter with direction other than inout must have exactly one ActivityParameterNode in an Activity.,"ownedParameter->forAll(p |
+p.direction <> ParameterDirectionKind::inout implies node->select(
+oclIsKindOf(ActivityParameterNode) and oclAsType(ActivityParameterNode).parameter =
+p)->size()= 1)",
+"A Parameter with direction inout must have exactly two ActivityParameterNodes in an Activity, at most one
+with incoming ActivityEdges and at most one with outgoing ActivityEdges.","ownedParameter->forAll(p | p.direction = ParameterDirectionKind::inout implies
+let associatedNodes : Set(ActivityNode) = node->select(
+oclIsKindOf(ActivityParameterNode) and oclAsType(ActivityParameterNode).parameter =
+p) in
+associatedNodes->size()=2 and
+associatedNodes->select(incoming->notEmpty())->size()<=1 and
+associatedNodes->select(outgoing->notEmpty())->size()<=1
+)",
+"If an ActivityEdge is directly owned by an Activity, then its source and target must be directly or indirectly
+contained in the same Activity.","activity<>null implies source.containingActivity() = activity and
+target.containingActivity() = activity",
+All containedNodes and containedEdges of an ActivityGroup must be in the same Activity as the group.,"containedNode->forAll(activity = self.containingActivity()) and
+containedEdge->forAll(activity = self.containingActivity())",
+"No containedNode or containedEdge of an ActivityGroup may be contained by its subgroups or its
+superGroups, transitively.","subgroup->closure(subgroup).containedNode->excludesAll(containedNode) and
+superGroup->closure(superGroup).containedNode->excludesAll(containedNode) and
+subgroup->closure(subgroup).containedEdge->excludesAll(containedEdge) and
+superGroup->closure(superGroup).containedEdge->excludesAll(containedEdge)",
+"An ActivityParameterNode with no outgoing ActivityEdges and one or more incoming ActivityEdges must
+have a parameter with direction out, inout, or return.","(incoming->notEmpty() and outgoing->isEmpty()) implies
+(parameter.direction = ParameterDirectionKind::out or
+parameter.direction = ParameterDirectionKind::inout or
+parameter.direction = ParameterDirectionKind::return)",
+The parameter of an ActivityParameterNode must be from the containing Activity.,activity.ownedParameter->includes(parameter),
+The type of an ActivityParameterNode is the same as the type of its parameter.,type = parameter.type,
+"An ActivityParameterNode with no incoming ActivityEdges and one or more outgoing ActivityEdges must
+have a parameter with direction in or inout.","(outgoing->notEmpty() and incoming->isEmpty()) implies
+(parameter.direction = ParameterDirectionKind::_'in' or
+parameter.direction = ParameterDirectionKind::inout)",
+"An ActivityParameterNode may have all incoming ActivityEdges or all outgoing ActivityEdges, but it must not
+have both incoming and outgoing ActivityEdges",incoming->isEmpty() or outgoing->isEmpty(),
+"If a non-external ActivityPartition represents a Classifier and has a superPartition, then the superPartition must
+represent a Classifier, and the Classifier of the subpartition must be nested (nestedClassifier or
+ownedBehavior) in the Classifier represented by the superPartition, or be at the contained end of a composition
+Association with the Classifier represented by the superPartition.","(not isExternal and represents.oclIsKindOf(Classifier) and superPartition->notEmpty())
+implies
+(
+let representedClassifier : Classifier = represents.oclAsType(Classifier) in superPartition.represents.oclIsKindOf(Classifier) and
+let representedSuperClassifier : Classifier =
+superPartition.represents.oclAsType(Classifier) in
+(representedSuperClassifier.oclIsKindOf(BehavioredClassifier) and
+representedClassifier.oclIsKindOf(Behavior) and
+representedSuperClassifier.oclAsType(BehavioredClassifier).ownedBehavior-
+>includes(representedClassifier.oclAsType(Behavior)))
+or
+(representedSuperClassifier.oclIsKindOf(Class) and
+representedSuperClassifier.oclAsType(Class).nestedClassifier-
+>includes(representedClassifier))
+or
+(Association.allInstances()->exists(a | a.memberEnd->exists(end1 | end1.isComposite
+and end1.type = representedClassifier and
+a.memberEnd-
+>exists(end2 | end1<>end2 and end2.type = representedSuperClassifier))))
+)",
+"If an ActivityPartition represents a Property and has a superPartition, then the Property must be of a Classifier
+represented by the superPartition, or of a Classifier that is the type of a Property represented by the
+superPartition.","(represents.oclIsKindOf(Property) and superPartition->notEmpty()) implies
+(
+(superPartition.represents.oclIsKindOf(Classifier) and represents.owner =
+superPartition.represents) or
+(superPartition.represents.oclIsKindOf(Property) and represents.owner =
+superPartition.represents.oclAsType(Property).type)
+)",
+"If an ActivityPartition represents a Property and has a superPartition representing a Classifier, then all the other
+non-external subpartitions of the superPartition must represent Properties directly owned by the same
+Classifier.","(represents.oclIsKindOf(Property) and superPartition->notEmpty() and
+superPartition.represents.oclIsKindOf(Classifier)) implies
+(
+let representedClassifier : Classifier = superPartition.represents.oclAsType(Classifier)
+in
+superPartition.subpartition->reject(isExternal)->forAll(p |
+p.represents.oclIsKindOf(Property) and p.owner=representedClassifier)
+)",
+An ActvivityPartition with isDimension = true may not be contained by another ActivityPartition.,isDimension implies superPartition->isEmpty(),
+"ControlFlows may not have ObjectNodes at either end, except for ObjectNodes with control type.","(source.oclIsKindOf(ObjectNode) implies source.oclAsType(ObjectNode).isControlType) and
+(target.oclIsKindOf(ObjectNode) implies target.oclAsType(ObjectNode).isControlType)",
+"If the DecisionNode has no decisionInputFlow and an incoming ControlFlow, then any decisionInput Behavior
+has no in parameters.","(decisionInput<>null and decisionInputFlow=null and incoming-
+>exists(oclIsKindOf(ControlFlow))) implies
+decisionInput.inputParameters()->isEmpty()",
+"The ActivityEdges incoming to and outgoing from a DecisionNode, other than the decisionInputFlow (if any),
+must be either all ObjectFlows or all ControlFlows.","let allEdges: Set(ActivityEdge) = incoming->union(outgoing) in
+let allRelevantEdges: Set(ActivityEdge) = if decisionInputFlow->notEmpty() then allEdges-
+>excluding(decisionInputFlow) else allEdges endif in
+allRelevantEdges->forAll(oclIsKindOf(ControlFlow)) or allRelevantEdges-
+>forAll(oclIsKindOf(ObjectFlow))",
+The decisionInputFlow of a DecisionNode must be an incoming ActivityEdge of the DecisionNode.,incoming->includes(decisionInputFlow),
+"If the DecisionNode has a decisionInputFlow and a second incoming ObjectFlow, then any decisionInput has
+two in Parameters, the first of which has a type that is the same as or a supertype of the type of object tokens
+offered on the non-decisionInputFlow and the second of which has a type that is the same as or a supertype of
+the type of object tokens offered on the decisionInputFlow.","(decisionInput<>null and decisionInputFlow<>null and incoming-
+>forAll(oclIsKindOf(ObjectFlow))) implies
+decisionInput.inputParameters()->size()=2",
+A DecisionNode has one or two incoming ActivityEdges and at least one outgoing ActivityEdge.,(incoming->size() = 1 or incoming->size() = 2) and outgoing->size() > 0,
+"If the DecisionNode has a decisionInputFlow and an incoming ControlFlow, then any decisionInput Behavior
+has one in Parameter whose type is the same as or a supertype of the type of object tokens offered on the
+decisionInputFlow.","(decisionInput<>null and decisionInputFlow<>null and incoming-
+>exists(oclIsKindOf(ControlFlow))) implies
+decisionInput.inputParameters()->size()=1",
+"A decisionInput Behavior has no out parameters, no inout parameters, and one return parameter.","decisionInput<>null implies
+(decisionInput.ownedParameter->forAll(par |
+par.direction <> ParameterDirectionKind::out and
+par.direction <> ParameterDirectionKind::inout ) and
+decisionInput.ownedParameter->one(par |
+par.direction <> ParameterDirectionKind::return))",
+"If the DecisionNode has no decisionInputFlow and an incoming ObjectFlow, then any decisionInput Behavior
+has one in Parameter whose type is the same as or a supertype of the type of object tokens offered on the
+incoming ObjectFlow.","(decisionInput<>null and decisionInputFlow=null and incoming-
+>forAll(oclIsKindOf(ObjectFlow))) implies
+decisionInput.inputParameters()->size()=1",
+"The handlerBody has no incoming or outgoing ActivityEdges and the exceptionInput has no incoming
+ActivityEdges.","handlerBody.incoming->isEmpty() and handlerBody.outgoing->isEmpty() and
+exceptionInput.incoming->isEmpty()",
+"If the protectedNode is an Action with OutputPins, then the handlerBody must also be an Action with the same
+number of OutputPins, which are compatible in type, ordering, and multiplicity to those of the protectedNode.","(protectedNode.oclIsKindOf(Action) and protectedNode.oclAsType(Action).output-
+>notEmpty()) implies
+(
+handlerBody.oclIsKindOf(Action) and
+let protectedNodeOutput : OrderedSet(OutputPin) = protectedNode.oclAsType(Action).output,
+handlerBodyOutput : OrderedSet(OutputPin) = handlerBody.oclAsType(Action).output in
+protectedNodeOutput->size() = handlerBodyOutput->size() and
+Sequence{1..protectedNodeOutput->size()}->forAll(i |
+handlerBodyOutput->at(i).type.conformsTo(protectedNodeOutput->at(i).type) and
+handlerBodyOutput->at(i).isOrdered=protectedNodeOutput->at(i).isOrdered and
+handlerBodyOutput->at(i).compatibleWith(protectedNodeOutput->at(i)))
+)",
+"The handlerBody is an Action with one InputPin, and that InputPin is the same as the exceptionInput.","handlerBody.oclIsKindOf(Action) and
+let inputs: OrderedSet(InputPin) = handlerBody.oclAsType(Action).input in
+inputs->size()=1 and inputs->first()=exceptionInput",
+"An ActivityEdge that has a source within the handlerBody of an ExceptionHandler must have its target in the
+handlerBody also, and vice versa.","let nodes:Set(ActivityNode) = handlerBody.oclAsType(Action).allOwnedNodes() in
+nodes.outgoing->forAll(nodes->includes(target)) and
+nodes.incoming->forAll(nodes->includes(source))",
+The handlerBody must have the same owner as the protectedNode.,handlerBody.owner=protectedNode.owner,
+The exceptionInput must either have no type or every exceptionType must conform to the exceptionInput type.,"exceptionInput.type=null or
+exceptionType->forAll(conformsTo(exceptionInput.type.oclAsType(Classifier)))",
+A FinalNode has no outgoing ActivityEdges.,outgoing->isEmpty(),
+"The ActivityEdges incoming to and outgoing from a ForkNode must be either all ObjectFlows or all
+ControlFlows.","let allEdges : Set(ActivityEdge) = incoming->union(outgoing) in
+allEdges->forAll(oclIsKindOf(ControlFlow)) or allEdges->forAll(oclIsKindOf(ObjectFlow))",
+A ForkNode has one incoming ActivityEdge.,incoming->size()=1,
+An InitialNode has no incoming ActivityEdges.,incoming->isEmpty(),
+All the outgoing ActivityEdges from an InitialNode must be ControlFlows,outgoing->forAll(oclIsKindOf(ControlFlow)),
+"The interruptingEdges of an InterruptibleActivityRegion must have their source in the region and their target
+outside the region, but within the same Activity containing the region.","interruptingEdge->forAll(edge |
+node->includes(edge.source) and node->excludes(edge.target) and
+edge.target.containingActivity() = inActivity)",
+A JoinNode has one outgoing ActivityEdge.,outgoing->size() = 1,
+"If one of the incoming ActivityEdges of a JoinNode is an ObjectFlow, then its outgoing ActivityEdge must be
+an ObjectFlow. Otherwise its outgoing ActivityEdge must be a ControlFlow.","if incoming->exists(oclIsKindOf(ObjectFlow)) then outgoing-
+>forAll(oclIsKindOf(ObjectFlow))
+else outgoing->forAll(oclIsKindOf(ControlFlow))
+endif",
+A MergeNode has one outgoing ActivityEdge.,outgoing->size()=1,
+"The ActivityEdges incoming to and outgoing from a MergeNode must be either all ObjectFlows or all
+ControlFlows.","let allEdges : Set(ActivityEdge) = incoming->union(outgoing) in
+allEdges->forAll(oclIsKindOf(ControlFlow)) or allEdges->forAll(oclIsKindOf(ObjectFlow))",
+"A selection Behavior has one input Parameter and one output Parameter. The input Parameter must have the
+same as or a supertype of the type of the source ObjectNode, be non-unique and have multiplicity 0..*. The
+output Parameter must be the same or a subtype of the type of source ObjectNode. The Behavior cannot have
+side effects.","selection<>null implies
+selection.inputParameters()->size()=1 and
+selection.inputParameters()->forAll(not isUnique and is(0,*)) and
+selection.outputParameters()->size()=1",
+ObjectFlows may not have ExecutableNodes at either end.,not (source.oclIsKindOf(ExecutableNode) or target.oclIsKindOf(ExecutableNode)),
+"A transformation Behavior has one input Parameter and one output Parameter. The input Parameter must be the
+same as or a supertype of the type of object token coming from the source end. The output Parameter must be
+the same or a subtype of the type of object token expected downstream. The Behavior cannot have side effects.","transformation<>null implies
+transformation.inputParameters()->size()=1 and
+transformation.outputParameters()->size()=1",
+An ObjectFlow may have a selection Behavior only if it has an ObjectNode as its source.,selection<>null implies source.oclIsKindOf(ObjectNode),
+isMulticast and isMultireceive cannot both be true.,not (isMulticast and isMultireceive),
+"A selection Behavior has one input Parameter and one output Parameter. The input Parameter must have the
+same type as or a supertype of the type of ObjectNode, be non-unique, and have multiplicity 0..*. The output
+Parameter must be the same or a subtype of the type of ObjectNode. The Behavior cannot have side effects.","selection<>null implies
+selection.inputParameters()->size()=1 and
+selection.inputParameters()->forAll(p | not p.isUnique and p.is(0,*) and
+self.type.conformsTo(p.type)) and
+selection.outputParameters()->size()=1 and
+selection.inputParameters()->forAll(p | self.type.conformsTo(p.type))",
+"If an ObjectNode has a selection Behavior, then the ordering of the object node is ordered, and vice versa.",(selection<>null) = (ordering=ObjectNodeOrderingKind::ordered),
+"If isControlType=false, the ActivityEdges incoming to or outgoing from an ObjectNode must all be
+ObjectFlows.",(not isControlType) implies incoming->union(outgoing)->forAll(oclIsKindOf(ObjectFlow)),
+"The number of result OutputPins must be the same as the number of input (in and inout) ownedParameters of
+the Operation specified by the trigger Event. The type, ordering and multiplicity of each result OutputPin must
+be consistent with the corresponding input Parameter.","let parameter: OrderedSet(Parameter) = trigger.event->asSequence()-
+>first().oclAsType(CallEvent).operation.inputParameters() in
+result->size() = parameter->size() and
+Sequence{1..result->size()}->forAll(i |
+parameter->at(i).type.conformsTo(result->at(i).type) and
+parameter->at(i).isOrdered = result->at(i).isOrdered and
+parameter->at(i).compatibleWith(result->at(i)))",
+"The action must have exactly one trigger, which must be for a CallEvent.","trigger->size()=1 and
+trigger->asSequence()->first().event.oclIsKindOf(CallEvent)",
+isUnmarshall must be true for an AcceptCallAction.,isUnmarshall = true,
+"If isUnmarshall=false and any of the triggers are for SignalEvents or TimeEvents, there must be exactly one
+result OutputPin with multiplicity 1..1.","not isUnmarshall and trigger->exists(event.oclIsKindOf(SignalEvent) or
+event.oclIsKindOf(TimeEvent)) implies
+output->size() = 1 and output->first().is(1,1)",
+AcceptEventActions may have no input pins.,input->size() = 0,
+"There are no OutputPins if the trigger events are only ChangeEvents and/or CallEvents when this action is an
+instance of AcceptEventAction and not an instance of a descendant of AcceptEventAction (such as
+AcceptCallAction).","(self.oclIsTypeOf(AcceptEventAction) and
+(trigger->forAll(event.oclIsKindOf(ChangeEvent) or event.oclIsKindOf(CallEvent))))
+implies output->size() = 0",
+"If isUnmarshall is true (and this is not an AcceptCallAction), there must be exactly one trigger, which is for a
+SignalEvent. The number of result output pins must be the same as the number of attributes of the signal. The
+type and ordering of each result output pin must be the same as the corresponding attribute of the signal. The
+multiplicity of each result output pin must be compatible with the multiplicity of the corresponding attribute.","isUnmarshall and self.oclIsTypeOf(AcceptEventAction) implies
+trigger->size()=1 and
+trigger->asSequence()->first().event.oclIsKindOf(SignalEvent) and
+let attribute: OrderedSet(Property) = trigger->asSequence()-
+>first().event.oclAsType(SignalEvent).signal.allAttributes() in
+attribute->size()>0 and result->size() = attribute->size() and
+Sequence{1..result->size()}->forAll(i |
+result->at(i).type = attribute->at(i).type and
+result->at(i).isOrdered = attribute->at(i).isOrdered and
+result->at(i).includesMultiplicity(attribute->at(i)))",
+"If isUnmarshall=false and all the triggers are for SignalEvents, then the type of the single result OutputPin
+must either be null or all the signals must conform to it.","not isUnmarshall implies
+result->isEmpty() or
+let type: Type = result->first().type in
+type=null or
+(trigger->forAll(event.oclIsKindOf(SignalEvent)) and
+trigger.event.oclAsType(SignalEvent).signal->forAll(s | s.conformsTo(type)))",
+The fromAction of an ActionInputPin must only have ActionInputPins as InputPins.,fromAction.input->forAll(oclIsKindOf(ActionInputPin)),
+The fromAction of an ActionInputPin must have exactly one OutputPin.,fromAction.output->size() = 1,
+The fromAction of an ActionInputPin cannot have ActivityEdges coming into or out of it or its Pins.,"fromAction.incoming->union(outgoing)->isEmpty() and
+fromAction.input.incoming->isEmpty() and
+fromAction.output.outgoing->isEmpty()",
+A value InputPin is required.,value<>null,
+"AddStructuralFeatureActions adding a value to ordered StructuralFeatures must have a single InputPin for the
+insertion point with type UnlimitedNatural and multiplicity of 1..1 if isReplaceAll=false, and must have no
+Input Pin for the insertion point when the StructuralFeature is unordered.","if not structuralFeature.isOrdered then insertAt = null
+else
+not isReplaceAll implies
+insertAt<>null and
+insertAt->forAll(type=UnlimitedNatural and is(1,1.oclAsType(UnlimitedNatural)))
+endif",
+"AddVariableValueActions for ordered Variables must have a single InputPin for the insertion point with type
+UnlimtedNatural and multiplicity of 1..1 if isReplaceAll=false, otherwise the Action has no InputPin for the
+insertion point.","if not variable.isOrdered then insertAt = null
+else
+not isReplaceAll implies
+insertAt<>null and
+insertAt->forAll(type=UnlimitedNatural and is(1,1.oclAsType(UnlimitedNatural)))
+endif",
+The number of argument InputPins must be the same as the number of attributes in the signal.,argument->size() = signal.allAttributes()->size(),
+"The type, ordering, and multiplicity of an argument InputPin must be the same as the corresponding attribute
+of the signal.","let attribute: OrderedSet(Property) = signal.allAttributes() in
+Sequence{1..argument->size()}->forAll(i |
+argument->at(i).type.conformsTo(attribute->at(i).type) and
+argument->at(i).isOrdered = attribute->at(i).isOrdered and argument->at(i).compatibleWith(attribute->at(i)))",
+A BroadcaseSignalAction may not specify onPort.,onPort=null,
+"The number of argument InputPins must be the same as the number of input (in and inout) ownedParameters of
+the called Behavior or Operation. The type, ordering and multiplicity of each argument InputPin must be
+consistent with the corresponding input Parameter.","let parameter: OrderedSet(Parameter) = self.inputParameters() in argument->size() = parameter->size() and
+Sequence{1..argument->size()}->forAll(i |
+argument->at(i).type.conformsTo(parameter->at(i).type) and
+argument->at(i).isOrdered = parameter->at(i).isOrdered and
+argument->at(i).compatibleWith(parameter->at(i)))",
+"The number of result OutputPins must be the same as the number of output (inout, out and return)
+ownedParameters of the called Behavior or Operation. The type, ordering and multiplicity of each result
+OutputPin must be consistent with the corresponding input Parameter.","let parameter: OrderedSet(Parameter) = self.outputParameters() in
+result->size() = parameter->size() and
+Sequence{1..result->size()}->forAll(i |
+parameter->at(i).type.conformsTo(result->at(i).type) and
+parameter->at(i).isOrdered = result->at(i).isOrdered and
+parameter->at(i).compatibleWith(result->at(i)))",
+Only synchronous CallActions can have result OutputPins.,result->notEmpty() implies isSynchronous,
+A CallBehaviorAction may not specify onPort.,onPort=null,
+"If onPort has no value, the operation must be an owned or inherited feature of the type of the target InputPin,
+otherwise the Port given by onPort must be an owned or inherited feature of the type of the target InputPin, and
+the Port must have a required or provided Interface with the operation as an owned or inherited feature.","if onPort=null then target.type.oclAsType(Classifier).allFeatures()-
+>includes(operation) else target.type.oclAsType(Classifier).allFeatures()->includes(onPort) and onPort.provided-
+>union(onPort.required).allFeatures()->includes(operation)
+endif",
+The bodyOutput Pins are OutputPins on Actions in the body of the Clause., _'body'.oclAsType(Action).allActions().output->includesAll(bodyOutput),
+"The decider Pin must be on an Action in the test section of the Clause and must be of type Boolean with
+multiplicity 1..1.","test.oclAsType(Action).allActions().output->includes(decider) and
+decider.type = Boolean and
+decider.is(1,1) ",
+The test and body parts of a ConditionalNode must be disjoint with each other.,test->intersection(_'body')->isEmpty(),
+The multiplicity of the object InputPin is 1..1.,"object.is(1,1)",
+The type of the InputPin must conform to the type of at least one of the memberEnds of the association.,association.memberEnd->exists(self.object.type.conformsTo(type)),
+The type of the result OutputPin is the same as the type of the inherited object InputPin.,result<>null implies result.type = object.type,
+The multiplicity of the result OutputPin must be 1..1.,"result<>null implies result.is(1,1)",
+The result OutputPins have no incoming edges.,result.incoming->isEmpty(),
+A ConditionalNode has no InputPins.,input->isEmpty(),
+"No ExecutableNode in the ConditionNode may appear in the test or body part of more than one clause of a
+ConditionalNode.","node->select(oclIsKindOf(ExecutableNode)).oclAsType(ExecutableNode)->forAll(n |
+self.clause->select(test->union(_'body')->includes(n))->size()=1)",
+"Each clause of a ConditionalNode must have the same number of bodyOutput pins as the ConditionalNode has
+result OutputPins, and each clause bodyOutput Pin must be compatible with the corresponding result
+OutputPin (by positional order) in type, multiplicity, ordering, and uniqueness.","clause->forAll(
+bodyOutput->size()=self.result->size() and
+Sequence{1..self.result->size()}->forAll(i |
+bodyOutput->at(i).type.conformsTo(result->at(i).type) and
+bodyOutput->at(i).isOrdered = result->at(i).isOrdered and
+bodyOutput->at(i).isUnique = result->at(i).isUnique and
+bodyOutput->at(i).compatibleWith(result->at(i))))",
+"The union of the ExecutableNodes in the test and body parts of all clauses must be the same as the subset of
+nodes contained in the ConditionalNode (considered as a StructuredActivityNode) that are ExecutableNodes.","clause.test->union(clause._'body') = node-
+>select(oclIsKindOf(ExecutableNode)).oclAsType(ExecutableNode)",
+"No two clauses within a ConditionalNode may be predecessorClauses of each other, either directly or
+indirectly.",clause->closure(predecessorClause)->intersection(clause)->isEmpty(),
+The Association cannot be an abstract Classifier.,not self.association().isAbstract,
+The multiplicity of the OutputPin is 1..1.,"result.is(1,1)",
+The type of the result OutputPin must be the same as the Association of the CreateLinkObjectAction.,result.type = association(),
+The Association must be an AssociationClass.,self.association().oclIsKindOf(AssociationClass),
+The classifier cannot be abstract.,not classifier.isAbstract,
+The multiplicity of the result OutputPin is 1..1.,"result.is(1,1)",
+The classifier cannot be an AssociationClass.,not classifier.oclIsKindOf(AssociationClass),
+The type of the result OutputPin must be the same as the classifier of the CreateObjectAction.,result.type = classifier,
+The multiplicity of the target IinputPin is 1..1.,"target.is(1,1)",
+The target InputPin has no type.,target.type= null,
+"One of regionAsInput or regionAsOutput must be non-empty, but not both.",regionAsInput->notEmpty() xor regionAsOutput->notEmpty(),
+"An InputPin may have outgoing ActivityEdges only when it is owned by a StructuredActivityNode, and these
+edges must target a node contained (directly or indirectly) in the owning StructuredActivityNode.","outgoing->notEmpty() implies
+action<>null and
+action.oclIsKindOf(StructuredActivityNode) and
+action.oclAsType(StructuredActivityNode).allOwnedNodes()->includesAll(outgoing.target)",
+The inputValue InputPins is the same as the union of all the InputPins referenced by the endData.,inputValue->asBag()=endData.allPins(),
+"The ends of the endData must all be from the same Association and include all and only the memberEnds of
+that association.",endData.end = self.association().memberEnd->asBag(),
+The ends of the endData must not be static.,endData->forAll(not end.isStatic),
+"LinkEndCreationData for ordered Association ends must have a single insertAt InputPin for the insertion point
+with type UnlimitedNatural and multiplicity of 1..1, if isReplaceAll=false, and must have no InputPin for the
+insertion point when the association ends are unordered.","if not end.isOrdered
+then insertAt = null
+else
+not isReplaceAll=false implies
+insertAt <> null and insertAt->forAll(type=UnlimitedNatural and is(1,1))
+endif",
+The type of the value InputPin conforms to the type of the Association end.,value<>null implies value.type.conformsTo(end.type),
+The multiplicity of the value InputPin must be 1..1.,"value<>null implies value.is(1,1)",
+The value InputPin is not also the qualifier value InputPin.,value->excludesAll(qualifier.value),
+The Property must be an Association memberEnd.,end.association <> null,
+The qualifiers must be qualifiers of the Association end.,end.qualifier->includesAll(qualifier.qualifier),
+"LinkEndDestructionData for ordered, nonunique Association ends must have a single destroyAt InputPin if
+isDestroyDuplicates is false, which must be of type UnlimitedNatural and have a multiplicity of 1..1.
+Otherwise, the action has no destroyAt input pin.","if not end.isOrdered or end.isUnique or isDestroyDuplicates
+then destroyAt = null
+else
+destroyAt <> null and
+destroyAt->forAll(type=UnlimitedNatural and is(1,1))
+endif",
+The result OutputPins have no incoming edges.,result.incoming->isEmpty(),
+The loopVariableInputs must not have outgoing edges.,loopVariableInput.outgoing->isEmpty(),
+"The union of the ExecutableNodes in the setupPart, test and bodyPart of a LoopNode must be the same as the
+subset of nodes contained in the LoopNode (considered as a StructuredActivityNode) that are
+ExecutableNodes.","setupPart->union(test)->union(bodyPart)=node-
+>select(oclIsKindOf(ExecutableNode)).oclAsType(ExecutableNode)->asSet()",
+The bodyOutput pins are OutputPins on Actions in the body of the LoopNode.,bodyPart.oclAsType(Action).allActions().output->includesAll(bodyOutput),
+The test and body parts of a ConditionalNode must be disjoint with each other.,"setupPart->intersection(test)->isEmpty() and
+setupPart->intersection(bodyPart)->isEmpty() and
+test->intersection(bodyPart)->isEmpty()",
+"A LoopNode must have the same number of bodyOutput Pins as loopVariables, and each bodyOutput Pin must
+be compatible with the corresponding loopVariable (by positional order) in type, multiplicity, ordering and
+uniqueness.","bodyOutput->size()=loopVariable->size() and
+Sequence{1..loopVariable->size()}->forAll(i |
+bodyOutput->at(i).type.conformsTo(loopVariable->at(i).type) and
+bodyOutput->at(i).isOrdered = loopVariable->at(i).isOrdered and
+bodyOutput->at(i).isUnique = loopVariable->at(i).isUnique and
+loopVariable->at(i).includesMultiplicity(bodyOutput->at(i)))",
+"A LoopNode must have the same number of loopVariableInputs and loopVariables, and they must match in
+type, uniqueness and multiplicity.","loopVariableInput->size()=loopVariable->size() and
+loopVariableInput.type=loopVariable.type and
+loopVariableInput.isUnique=loopVariable.isUnique and
+loopVariableInput.lower=loopVariable.lower and
+loopVariableInput.upper=loopVariable.upper",
+"A LoopNode must have the same number of result OutputPins and loopVariables, and they must match in type,
+uniqueness and multiplicity.","result->size()=loopVariable->size() and
+result.type=loopVariable.type and
+result.isUnique=loopVariable.isUnique and
+result.lower=loopVariable.lower and
+result.upper=loopVariable.upper",
+All ActivityEdges outgoing from loopVariable OutputPins must have targets within the LoopNode.,allOwnedNodes()->includesAll(loopVariable.outgoing.target),
+"If the language attribute is not empty, then the size of the body and language lists must be the same.",language->notEmpty() implies (_'body'->size() = language->size()),
+"An OutputPin may have incoming ActivityEdges only when it is owned by a StructuredActivityNode, and
+these edges must have sources contained (directly or indirectly) in the owning StructuredActivityNode.","incoming->notEmpty() implies
+action<>null and
+action.oclIsKindOf(StructuredActivityNode) and
+action.oclAsType(StructuredActivityNode).allOwnedNodes()->includesAll(incoming.source)",
+A control Pin has a control type.,isControl implies isControlType,
+Pin multiplicity is not unique.,not isUnique,
+The multiplicity of the value InputPin is 1..1.,"value.is(1,1)",
+The type of the value InputPin conforms to the type of the qualifier Property.,value.type.conformsTo(qualifier.type),
+The qualifier must be a qualifier of the Association end of the linkEndData that owns this QualifierValue.,linkEndData.end.qualifier->includes(qualifier),
+The type of the result OutputPin is the classifier.,result.type = classifier,
+The multiplicity of the result OutputPin is 0..*.,"result.is(0,*)",
+The object InputPin has no type.,object.type = null,
+The multiplicity of the result OutputPin is 1..1.,"result.is(1,1)",
+The type of the result OutputPin is Boolean.,result.type = Boolean,
+The multiplicity of the object InputPin is 1..1.,"object.is(1,1)",
+The type and ordering of the result OutputPin are same as the type and ordering of the open Association end.,self.openEnd()->forAll(type=result.type and isOrdered=result.isOrdered),
+The multiplicity of the open Association end must be compatible with the multiplicity of the result OutputPin.,self.openEnd()->first().compatibleWith(result),
+Visibility of the open end must allow access from the object performing the action.,"let openEnd : Property = self.openEnd()->first() in
+openEnd.visibility = VisibilityKind::public or
+endData->exists(oed |
+oed.end<>openEnd and
+(_'context' = oed.end.type or
+(openEnd.visibility = VisibilityKind::protected and
+_'context'.conformsTo(oed.end.type.oclAsType(Classifier)))))",
+"Exactly one linkEndData specification (corresponding to the ""open"" end) must not have a value InputPin.",self.openEnd()->size() = 1,
+The open end must be navigable.,self.openEnd()->first().isNavigable(),
+The end Property must be an Association memberEnd.,end.association <> null,
+The multiplicity of the object InputPin is 1..1.,"object.is(1,1)",
+The ends of the association must not be static.,end.association.memberEnd->forAll(e | not e.isStatic),
+The type of the result OutputPin is the same as the type of the end Property.,result.type = end.type,
+The multiplicity of the result OutputPin is 1..1.,"result.is(1,1)",
+The type of the object InputPin is the AssociationClass that owns the end Property.,object.type = end.association,
+The association of the end must be an AssociationClass.,end.association.oclIsKindOf(AssociationClass),
+The multiplicity of the object InputPin is 1..1.,"object.is(1,1)",
+"The type of the object InputPin is the AssociationClass that owns the Association end that has the given
+qualifier Property.",object.type = qualifier.associationEnd.association,
+The multiplicity of the qualifier Property is 1..1.,"qualifier.is(1,1)",
+The ends of the Association must not be static.,qualifier.associationEnd.association.memberEnd->forAll(e | not e.isStatic),
+The multiplicity of the result OutputPin is 1..1.,"result.is(1,1)",
+The type of the result OutputPin is the same as the type of the qualifier Property.,result.type = qualifier.type,
+The association of the Association end of the qualifier Property must be an AssociationClass.,qualifier.associationEnd.association.oclIsKindOf(AssociationClass),
+The qualifier Property must be a qualifier of an Association end.,qualifier.associationEnd <> null,
+A ReadSelfAction must have a context Classifier.,_'context' <> null,
+The multiplicity of the result OutputPin is 1..1.,"result.is(1,1)",
+"If the ReadSelfAction is contained in a Behavior that is acting as a method, then the Operation of the method
+must not be static.","let behavior: Behavior = self.containingBehavior() in
+behavior.specification<>null implies not behavior.specification.isStatic",
+The type of the result OutputPin is the context Classifier.,result.type = _'context',
+The multiplicity of the StructuralFeature must be compatible with the multiplicity of the result OutputPin.,structuralFeature.compatibleWith(result),
+The type and ordering of the result OutputPin are the same as the type and ordering of the StructuralFeature.,"result.type =structuralFeature.type and
+result.isOrdered = structuralFeature.isOrdered",
+The type and ordering of the result OutputPin are the same as the type and ordering of the variable.,"result.type =variable.type and
+result.isOrdered = variable.isOrdered",
+The multiplicity of the variable must be compatible with the multiplicity of the output pin.,variable.compatibleWith(result),
+The object InputPin has no type.,object.type = null,
+None of the newClassifiers may be abstract.,not newClassifier->exists(isAbstract),
+The multiplicity of the object InputPin is 1..1.,"object.is(1,1)",
+"The reducer Behavior must have two input ownedParameters and one output ownedParameter, where the type of the output Parameter and the type of elements of the input collection conform to the types of the input
+Parameters.","let inputs: OrderedSet(Parameter) = reducer.inputParameters() in
+let outputs: OrderedSet(Parameter) = reducer.outputParameters() in
+inputs->size()=2 and outputs->size()=1 and
+inputs.type->forAll(t |
+outputs.type->forAll(conformsTo(t)) and
+-- Note that the following only checks the case when the collection is via multiple
+tokens.
+collection.upperBound()>1 implies collection.type.conformsTo(t))",
+The type of the output of the reducer Behavior must conform to the type of the result OutputPin.,reducer.outputParameters().type->forAll(conformsTo(result.type)),
+"RemoveStructuralFeatureValueActions removing a value from ordered, non-unique StructuralFeatures must
+have a single removeAt InputPin and no value InputPin, if isRemoveDuplicates is false. The removeAt
+InputPin must be of type Unlimited Natural with multiplicity 1..1. Otherwise, the Action has a value InputPin
+and no removeAt InputPin.","if structuralFeature.isOrdered and not structuralFeature.isUnique and not
+isRemoveDuplicates then
+value = null and
+removeAt <> null and
+removeAt.type = UnlimitedNatural and
+removeAt.is(1,1)
+else
+removeAt = null and value <> null
+endif",
+"ReadVariableActions removing a value from ordered, non-unique Variables must have a single removeAt
+InputPin and no value InputPin, if isRemoveDuplicates is false. The removeAt InputPin must be of type
+Unlimited Natural with multiplicity 1..1. Otherwise, the Action has a value InputPin and no removeAt
+InputPin.","if variable.isOrdered and not variable.isUnique and not isRemoveDuplicates then
+value = null and
+removeAt <> null and
+removeAt.type = UnlimitedNatural and
+removeAt.is(1,1)
+else
+removeAt = null and value <> null
+endif",
+"The replyValue InputPins must match the output (return, out, and inout) parameters of the operation of the
+event of the replyToCall Trigger in number, type, ordering, and multiplicity.","let parameter:OrderedSet(Parameter) =
+replyToCall.event.oclAsType(CallEvent).operation.outputParameters() in
+replyValue->size()=parameter->size() and
+Sequence{1..replyValue->size()}->forAll(i |
+replyValue->at(i).type.conformsTo(parameter->at(i).type) and
+replyValue->at(i).isOrdered=parameter->at(i).isOrdered and
+replyValue->at(i).compatibleWith(parameter->at(i)))",
+The event of the replyToCall Trigger must be a CallEvent.,replyToCall.event.oclIsKindOf(CallEvent),
+"If onPort is not empty, the Port given by onPort must be an owned or inherited feature of the type of the target
+InputPin.",onPort<>null implies target.type.oclAsType(Classifier).allFeatures()->includes(onPort),
+"The type, ordering, and multiplicity of an argument InputPin must be the same as the corresponding attribute
+of the signal.","let attribute: OrderedSet(Property) = signal.allAttributes() in
+Sequence{1..argument->size()}->forAll(i |
+argument->at(i).type.conformsTo(attribute->at(i).type) and
+argument->at(i).isOrdered = attribute->at(i).isOrdered and
+argument->at(i).compatibleWith(attribute->at(i)))",
+"The number and order of argument InputPins must be the same as the number and order of attributes of the
+signal.",argument->size()=signal.allAttributes()->size(),
+"If onPort is not empty, the Port given by onPort must be an owned or inherited feature of the type of the target
+InputPin.","not onPort->isEmpty() implies target.type.oclAsType(Classifier).allFeatures()-
+>includes(onPort)",
+The multiplicity of the object InputPin is 1..1,"object.is(1,1)",
+"If the InputPin has a type, then the type or one of its ancestors must have a classifierBehavior.","object.type->notEmpty() implies
+(object.type.oclIsKindOf(BehavioredClassifier) and
+object.type.oclAsType(BehavioredClassifier).classifierBehavior<>null)",
+The multiplicity of the object InputPin must be 1..1.,"object.is(1,1)",
+The type of the object InputPin must be either a Behavior or a BehavioredClassifier with a classifierBehavior.,self.behavior()<>null,
+A StartObjectBehaviorAction may not specify onPort.,onPort->isEmpty(),
+"The structuralFeature must either be an owned or inherited feature of the type of the object InputPin, or it must
+be an owned end of a binary Association whose opposite end had as a type to which the type of the object
+InputPin conforms.","object.type.oclAsType(Classifier).allFeatures()->includes(structuralFeature) or
+object.type.conformsTo(structuralFeature.oclAsType(Property).opposite.type)",
+"The visibility of the structuralFeature must allow access from the object performing the
+ReadStructuralFeatureAction.","structuralFeature.visibility = VisibilityKind::public or
+_'context'.allFeatures()->includes(structuralFeature) or
+structuralFeature.visibility=VisibilityKind::protected and
+_'context'.conformsTo(structuralFeature.oclAsType(Property).opposite.type.oclAsType(Classifi
+er))",
+The structuralFeature must not be static.,not structuralFeature.isStatic,
+The structuralFeature must have exactly one featuringClassifier.,structuralFeature.featuringClassifier->size() = 1,
+"The outgoing ActivityEdges of the OutputPins of a StructuredActivityNode must have targets that are not
+within the StructuredActivityNode.",output.outgoing.target->excludesAll(allOwnedNodes()-input),
+"The edges of a StructuredActivityNode are all the ActivityEdges with source and target ActivityNodes
+contained directly or indirectly within the StructuredActivityNode and at least one of the source or target not
+contained in any more deeply nested StructuredActivityNode.","edge=self.sourceNodes().outgoing->intersection(self.allOwnedNodes().incoming)->
+union(self.targetNodes().incoming->intersection(self.allOwnedNodes().outgoing))->asSet()",
+"The incoming ActivityEdges of an InputPin of a StructuredActivityNode must have sources that are not within
+the StructuredActivityNode.",input.incoming.source->excludesAll(allOwnedNodes()-output),
+The multiplicity of the InputPins is 1..1.,"first.is(1,1) and second.is(1,1)",
+The InputPins have no type.,first.type= null and second.type = null,
+The type of the result OutputPin is Boolean.,result.type=Boolean,
+The unmarshallType must have at least one StructuralFeature.,unmarshallType.allAttributes()->size() >= 1,
+The number of result outputPins must be the same as the number of attributes of the unmarshallType.,unmarshallType.allAttributes()->size() = result->size(),
+"The type, ordering and multiplicity of each attribute of the unmarshallType must be compatible with the type,
+ordering and multiplicity of the corresponding result OutputPin.","let attribute:OrderedSet(Property) = unmarshallType.allAttributes() in
+Sequence{1..result->size()}->forAll(i |
+attribute->at(i).type.conformsTo(result->at(i).type) and
+attribute->at(i).isOrdered=result->at(i).isOrdered and
+attribute->at(i).compatibleWith(result->at(i)))",
+The multiplicity of the object InputPin is 1..1,"object.is(1,1)",
+The type of the object InputPin conform to the unmarshallType.,object.type.conformsTo(unmarshallType),
+A ValuePin may have no incoming ActivityEdges.,incoming->isEmpty(),
+The type of the value ValueSpecification must conform to the type of the ValuePin.,value.type.conformsTo(type),
+The multiplicity of the result OutputPin is 1..1,"result.is(1,1)",
+The type of the value ValueSpecification must conform to the type of the result OutputPin.,value.type.conformsTo(result.type),
+The VariableAction must be in the scope of the variable.,variable.isAccessibleBy(self),
+The visibility of at least one end must allow access from the context Classifier of the WriteLinkAction.,"endData.end->exists(end |
+end.type=_'context' or
+end.visibility=VisibilityKind::public or
+end.visibility=VisibilityKind::protected and
+endData.end->exists(other |
+other<>end and _'context'.conformsTo(other.type.oclAsType(Classifier))))",
+The multiplicity of the result OutputPin must be 1..1.,"result <> null implies result.is(1,1)",
+The type of the value InputPin must conform to the type of the structuralFeature.,value <> null implies value.type.conformsTo(structuralFeature.type),
+The multiplicity of the value InputPin is 1..1.,"value<>null implies value.is(1,1)",
+The type of the result OutputPin is the same as the type of the inherited object InputPin.,result <> null implies result.type = object.type,
+The type of the value InputPin must conform to the type of the variable.,value <> null implies value.type.conformsTo(variable.type),
+The multiplicity of the value InputPin is 1..1.,"value<>null implies value.is(1,1)",
+"The Action referenced by the ActionExecutionSpecification must be owned by the Interaction owning that
+ActionExecutionSpecification.","(enclosingInteraction->notEmpty() or enclosingOperand.combinedFragment->notEmpty()) and
+let parentInteraction : Set(Interaction) = enclosingInteraction.oclAsType(Interaction)-
+>asSet()->union(
+enclosingOperand.combinedFragment->closure(enclosingOperand.combinedFragment)->
+collect(enclosingInteraction).oclAsType(Interaction)->asSet()) in
+(parentInteraction->size() = 1) and self.action.interaction->asSet() = parentInteraction",
+"If the interactionOperator is break, the corresponding InteractionOperand must cover all Lifelines covered by
+the enclosing InteractionFragment.","interactionOperator=InteractionOperatorKind::break implies
+enclosingInteraction.oclAsType(InteractionFragment)->asSet()->union(
+enclosingOperand.oclAsType(InteractionFragment)->asSet()).covered->asSet() =
+self.covered->asSet()",
+"The interaction operators 'consider' and 'ignore' can only be used for the ConsiderIgnoreFragment subtype of
+CombinedFragment.","((interactionOperator = InteractionOperatorKind::consider) or (interactionOperator =
+InteractionOperatorKind::ignore)) implies oclIsKindOf(ConsiderIgnoreFragment)",
+"If the interactionOperator is opt, loop, break, assert or neg, there must be exactly one operand.","(interactionOperator = InteractionOperatorKind::opt or interactionOperator =
+InteractionOperatorKind::loop or
+interactionOperator = InteractionOperatorKind::break or interactionOperator =
+InteractionOperatorKind::assert or
+interactionOperator = InteractionOperatorKind::neg)
+implies operand->size()=1",
+The interaction operator of a ConsiderIgnoreFragment must be either 'consider' or 'ignore'.,"(interactionOperator = InteractionOperatorKind::consider) or (interactionOperator =
+InteractionOperatorKind::ignore)",
+"The NamedElements must be of a type of element that can be a signature for a message (i.e.., an Operation, or
+a Signal).",message->forAll(m | m.oclIsKindOf(Operation) or m.oclIsKindOf(Signal)),
+"Continuations always occur as the very first InteractionFragment or the very last InteractionFragment of the
+enclosing InteractionOperand.","enclosingOperand->notEmpty() and
+let peerFragments : OrderedSet(InteractionFragment) = enclosingOperand.fragment in
+( peerFragments->notEmpty() and
+((peerFragments->first() = self) or (peerFragments->last() = self)))",
+"Across all Interaction instances having the same context value, every Lifeline instance covered by a
+Continuation (self) must be common with one covered Lifeline instance of all other Continuation instances
+with the same name as self, and every Lifeline instance covered by a Continuation instance with the same
+name as self must be common with one covered Lifeline instance of self. Lifeline instances are common if they
+have the same selector and represents associationEnd values.","enclosingOperand.combinedFragment->notEmpty() and
+let parentInteraction : Set(Interaction) =
+enclosingOperand.combinedFragment->closure(enclosingOperand.combinedFragment)->
+collect(enclosingInteraction).oclAsType(Interaction)->asSet()
+in
+(parentInteraction->size() = 1)
+and let peerInteractions : Set(Interaction) =
+(parentInteraction->union(parentInteraction->collect(_'context')->collect(behavior)->
+select(oclIsKindOf(Interaction)).oclAsType(Interaction)->asSet())->asSet()) in
+(peerInteractions->notEmpty()) and
+let combinedFragments1 : Set(CombinedFragment) = peerInteractions.fragment->
+select(oclIsKindOf(CombinedFragment)).oclAsType(CombinedFragment)->asSet() in
+combinedFragments1->notEmpty() and combinedFragments1->closure(operand.fragment->
+select(oclIsKindOf(CombinedFragment)).oclAsType(CombinedFragment))-
+>asSet().operand.fragment->
+select(oclIsKindOf(Continuation)).oclAsType(Continuation)->asSet()->
+forAll(c : Continuation | (c.name = self.name) implies
+(c.covered->asSet()->forAll(cl : Lifeline | -- cl must be common to one lifeline covered
+by self
+self.covered->asSet()->
+select(represents = cl.represents and selector = cl.selector)->asSet()->size()=1))
+and
+(self.covered->asSet()->forAll(cl : Lifeline | -- cl must be common to one lifeline
+covered by c
+c.covered->asSet()->
+select(represents = cl.represents and selector = cl.selector)->asSet()->size()=1))
+)",
+"Continuations are always global in the enclosing InteractionFragment e.g., it always covers all Lifelines
+covered by the enclosing InteractionOperator.","enclosingOperand->notEmpty() and
+let operandLifelines : Set(Lifeline) = enclosingOperand.covered in
+(operandLifelines->notEmpty() and
+operandLifelines->forAll(ol :Lifeline |self.covered->includes(ol)))",
+"No other OccurrenceSpecifications on a given Lifeline in an InteractionOperand may appear below a
+DestructionOccurrenceSpecification.","let o : InteractionOperand = enclosingOperand in o->notEmpty() and let peerEvents : OrderedSet(OccurrenceSpecification) = covered.events-
+>select(enclosingOperand = o)
+in peerEvents->last() = self",
+The startEvent and the finishEvent must be on the same Lifeline.,start.covered = finish.covered,
+"If this Gate is an actualGate, it must have exactly one matching formalGate within the referred Interaction.","interactionUse->notEmpty() implies interactionUse.refersTo.formalGate-
+>select(matches(self))->size()=1",
+"If this Gate is inside a CombinedFragment, it must have exactly one matching Gate which is outside of that
+CombinedFragment.","isInsideCF() implies combinedFragment.cfragmentGate->select(isOutsideCF() and
+matches(self))->size()=1",
+"If this Gate is outside an 'alt' CombinedFragment, for every InteractionOperator inside that CombinedFragment
+there must be exactly one matching Gate inside the CombinedFragment with its opposing end enclosed by that
+InteractionOperator. If this Gate is outside CombinedFragment with operator other than 'alt', there must be
+exactly one matching Gate inside that CombinedFragment.","isOutsideCF() implies
+if self.combinedFragment.interactionOperator->asOrderedSet()->first() =
+InteractionOperatorKind::alt
+then self.combinedFragment.operand->forAll(op : InteractionOperand |
+self.combinedFragment.cfragmentGate->select(isInsideCF() and
+oppositeEnd().enclosingFragment()->includes(self.combinedFragment) and matches(self))-
+>size()=1)
+else self.combinedFragment.cfragmentGate->select(isInsideCF() and matches(self))->size()=1
+endif",
+"isFormal() implies that no other formalGate of the parent Interaction returns the same getName() as returned
+for self.",isFormal() implies interaction.formalGate->select(getName() = self.getName()),
+"isActual() implies that no other actualGate of the parent InteractionUse returns the same getName() as returned
+for self.","isActual() implies interactionUse.actualGate->select(getName() = self.getName())-
+>size()=1",
+"isOutsideCF() implies that no other outside cfragmentGate of the parent CombinedFragment returns the same
+getName() as returned for self.","isOutsideCF() implies combinedFragment.cfragmentGate->select(getName() =
+self.getName())->size()=1",
+"isInsideCF() implies that no other inside cfragmentGate attached to a message with its other end in the same
+InteractionOperator as self, returns the same getName() as returned for self.","isInsideCF() implies
+let selfOperand : InteractionOperand = self.getOperand() in
+combinedFragment.cfragmentGate->select(isInsideCF() and getName() = self.getName())-
+>select(getOperand() = selfOperand)->size()=1",
+"An occurrence specification must not be ordered relative to itself through a series of general orderings. (In
+other words, the transitive closure of the general orderings is irreflexive.)",after->closure(toAfter.after)->excludes(before),
+An Interaction instance must not be contained within another Interaction instance.,enclosingInteraction->isEmpty(),
+"Minint/maxint can only be present if the InteractionConstraint is associated with the operand of a loop
+CombinedFragment.","maxint->notEmpty() or minint->notEmpty() implies
+interactionOperand.combinedFragment.interactionOperator =
+InteractionOperatorKind::loop",
+"If minint is specified, then the expression must evaluate to a non-negative integer.",minint->notEmpty() implies minint->asSequence()->first().integerValue() >= 0,
+"If maxint is specified, then the expression must evaluate to a positive integer.","maxint->notEmpty() implies
+maxint->asSequence()->first().integerValue() > 0",
+"If maxint is specified, then minint must be specified and the evaluation of maxint must be >= the evaluation of
+minint.","maxint->notEmpty() implies (minint->notEmpty() and
+maxint->asSequence()->first().integerValue() >=
+minint->asSequence()->first().integerValue() )",
+"Actual Gates of the InteractionUse must match Formal Gates of the referred Interaction. Gates match when
+their names are equal and their messages correspond.","actualGate->notEmpty() implies
+refersTo.formalGate->forAll( fg : Gate | self.actualGate->select(matches(fg))->size()=1) and
+self.actualGate->forAll(ag : Gate | refersTo.formalGate->select(matches(ag))->size()=1)",
+"The returnValueRecipient must be a Property of a ConnectableElement that is represented by a Lifeline
+covered by this InteractionUse.","returnValueRecipient->asSet()->notEmpty() implies
+let covCE : Set(ConnectableElement) = covered.represents->asSet() in
+covCE->notEmpty() and let classes:Set(Classifier) =
+covCE.type.oclIsKindOf(Classifier).oclAsType(Classifier)->asSet() in
+let allProps : Set(Property) = classes.attribute->union(classes.allParents().attribute)-
+>asSet() in
+allProps->includes(returnValueRecipient)",
+The type of the returnValue must correspond to the type of the returnValueRecipient.,"returnValue.type->asSequence()->notEmpty() implies returnValue.type->asSequence()-
+>first() = returnValueRecipient.type->asSequence()->first()",
+"The InteractionUse must cover all Lifelines of the enclosing Interaction that are common with the lifelines
+covered by the referred Interaction. Lifelines are common if they have the same selector and represents
+associationEnd values.","let parentInteraction : Set(Interaction) = enclosingInteraction->asSet()->
+union(enclosingOperand.combinedFragment->closure(enclosingOperand.combinedFragment)->
+collect(enclosingInteraction).oclAsType(Interaction)->asSet()) in
+parentInteraction->size()=1 and let refInteraction : Interaction = refersTo in
+parentInteraction.covered-> forAll(intLifeline : Lifeline | refInteraction.covered->
+forAll( refLifeline : Lifeline | refLifeline.represents = intLifeline.represents and
+(
+( refLifeline.selector.oclIsKindOf(LiteralString) implies
+intLifeline.selector.oclIsKindOf(LiteralString) and
+refLifeline.selector.oclAsType(LiteralString).value =
+intLifeline.selector.oclAsType(LiteralString).value ) and
+( refLifeline.selector.oclIsKindOf(LiteralInteger) implies
+intLifeline.selector.oclIsKindOf(LiteralInteger) and
+refLifeline.selector.oclAsType(LiteralInteger).value =
+intLifeline.selector.oclAsType(LiteralInteger).value ))
+implies self.covered->asSet()->includes(intLifeline)))",
+The selector for a Lifeline must only be specified if the referenced Part is multivalued.,"self.selector->notEmpty() = (self.represents.oclIsKindOf(MultiplicityElement) and
+self.represents.oclAsType(MultiplicityElement).isMultivalued())",
+"If a lifeline is in an Interaction referred to by an InteractionUse in an enclosing Interaction, and that lifeline is
+common with another lifeline in an Interaction referred to by another InteractonUse within that same enclosing
+Interaction, it must be common to a lifeline within that enclosing Interaction. By common Lifelines we mean
+Lifelines with the same selector and represents associations.","let intUses : Set(InteractionUse) = interaction.interactionUse in
+intUses->forAll
+( iuse : InteractionUse |
+let usingInteraction : Set(Interaction) = iuse.enclosingInteraction->asSet()
+->union(
+iuse.enclosingOperand.combinedFragment->asSet()-
+>closure(enclosingOperand.combinedFragment).enclosingInteraction->asSet())
+in
+let peerUses : Set(InteractionUse) = usingInteraction.fragment-
+>select(oclIsKindOf(InteractionUse)).oclAsType(InteractionUse)->asSet()
+->union(
+usingInteraction.fragment-
+>select(oclIsKindOf(CombinedFragment)).oclAsType(CombinedFragment)->asSet()
+->closure(operand.fragment-
+>select(oclIsKindOf(CombinedFragment)).oclAsType(CombinedFragment)).operand.fragment->
+select(oclIsKindOf(InteractionUse)).oclAsType(InteractionUse)->asSet()
+)->excluding(iuse)
+in
+peerUses->forAll( peerUse : InteractionUse |
+peerUse.refersTo.lifeline->forAll( l : Lifeline | (l.represents = self.represents and
+( self.selector.oclIsKindOf(LiteralString) implies
+l.selector.oclIsKindOf(LiteralString) and
+self.selector.oclAsType(LiteralString).value = l.selector.oclAsType(LiteralString).value )
+and
+( self.selector.oclIsKindOf(LiteralInteger) implies
+l.selector.oclIsKindOf(LiteralInteger) and
+self.selector.oclAsType(LiteralInteger).value = l.selector.oclAsType(LiteralInteger).value
+))
+implies
+usingInteraction.lifeline->select(represents = self.represents and
+( self.selector.oclIsKindOf(LiteralString) implies
+l.selector.oclIsKindOf(LiteralString) and
+self.selector.oclAsType(LiteralString).value = l.selector.oclAsType(LiteralString).value )
+and
+( self.selector.oclIsKindOf(LiteralInteger) implies
+l.selector.oclIsKindOf(LiteralInteger) and
+self.selector.oclAsType(LiteralInteger).value = l.selector.oclAsType(LiteralInteger).value
+))
+)
+)
+)",
+,,
+"The classifier containing the referenced ConnectableElement must be the same classifier, or an ancestor, of the
+classifier that contains the interaction enclosing this lifeline.",represents.namespace->closure(namespace)->includes(interaction._'context'),
+"The selector value, if present, must be a LiteralString or a LiteralInteger.","self.selector->notEmpty() implies
+self.selector.oclIsKindOf(LiteralInteger) or
+self.selector.oclIsKindOf(LiteralString)",
+"If the sendEvent and the receiveEvent of the same Message are on the same Lifeline, the sendEvent must be
+ordered before the receiveEvent.","receiveEvent.oclIsKindOf(MessageOccurrenceSpecification)
+implies let f : Lifeline = sendEvent-
+>select(oclIsKindOf(MessageOccurrenceSpecification)).oclAsType(MessageOccurrenceSpecificatio
+n)->asOrderedSet()->first().covered in
+f = receiveEvent-
+>select(oclIsKindOf(MessageOccurrenceSpecification)).oclAsType(MessageOccurrenceSpecificatio
+n)->asOrderedSet()->first().covered implies
+f.events->indexOf(sendEvent.oclAsType(MessageOccurrenceSpecification)->asOrderedSet()-
+>first() ) <
+f.events->indexOf(receiveEvent.oclAsType(MessageOccurrenceSpecification)->asOrderedSet()-
+>first() )",
+"Messages cannot cross boundaries of CombinedFragments or their operands. This is true if and only if both
+MessageEnds are enclosed within the same InteractionFragment (i.e., an InteractionOperand or an Interaction).","sendEvent->notEmpty() and receiveEvent->notEmpty() implies
+let sendEnclosingFrag : Set(InteractionFragment) =
+sendEvent->asOrderedSet()->first().enclosingFragment()
+in
+let receiveEnclosingFrag : Set(InteractionFragment) =
+receiveEvent->asOrderedSet()->first().enclosingFragment()
+in sendEnclosingFrag = receiveEnclosingFrag",
+"In the case when the Message signature is a Signal, the arguments of the Message must correspond to the
+attributes of the Signal. A Message Argument corresponds to a Signal Attribute if the Argument is of the same
+Class or a specialization of that of the Attribute.","(messageSort = MessageSort::asynchSignal ) and signature.oclIsKindOf(Signal) implies
+let signalAttributes : OrderedSet(Property) =
+signature.oclAsType(Signal).inheritedMember()->
+select(n:NamedElement | n.oclIsTypeOf(Property))->collect(oclAsType(Property))-
+>asOrderedSet()
+in signalAttributes->size() = self.argument->size()
+and self.argument->forAll( o: ValueSpecification |
+not (o.oclIsKindOf(Expression)
+and o.oclAsType(Expression).symbol->size()=0
+and o.oclAsType(Expression).operand->isEmpty() ) implies
+let p : Property = signalAttributes->at(self.argument->indexOf(o))
+in o.type.oclAsType(Classifier).conformsTo(p.type.oclAsType(Classifier)))",
+"The signature must either refer an Operation (in which case messageSort is either synchCall or asynchCall or
+reply) or a Signal (in which case messageSort is asynchSignal). The name of the NamedElement referenced by
+signature must be the same as that of the Message.","signature->notEmpty() implies
+((signature.oclIsKindOf(Operation) and
+(messageSort = MessageSort::asynchCall or messageSort = MessageSort::synchCall or
+messageSort = MessageSort::reply)
+) or (signature.oclIsKindOf(Signal) and messageSort = MessageSort::asynchSignal )
+) and name = signature.name",
+"In the case when a Message with messageSort synchCall or asynchCall has a non empty Operation signature,
+the arguments of the Message must correspond to the in and inout parameters of the Operation. A Parameter
+corresponds to an Argument if the Argument is of the same Class or a specialization of that of the Parameter.","(messageSort = MessageSort::asynchCall or messageSort = MessageSort::synchCall) and
+signature.oclIsKindOf(Operation) implies
+let requestParms : OrderedSet(Parameter) = signature.oclAsType(Operation).ownedParameter->
+select(direction = ParameterDirectionKind::inout or direction =
+ParameterDirectionKind::_'in' )
+in requestParms->size() = self.argument->size() and
+self.argument->forAll( o: ValueSpecification |
+not (o.oclIsKindOf(Expression) and o.oclAsType(Expression).symbol->size()=0 and
+o.oclAsType(Expression).operand->isEmpty() ) implies
+let p : Parameter = requestParms->at(self.argument->indexOf(o)) in
+o.type.oclAsType(Classifier).conformsTo(p.type.oclAsType(Classifier))
+)",
+"In the case when a Message with messageSort reply has a non empty Operation signature, the arguments of the
+Message must correspond to the out, inout, and return parameters of the Operation. A Parameter corresponds to
+an Argument if the Argument is of the same Class or a specialization of that of the Parameter.","(messageSort = MessageSort::reply) and signature.oclIsKindOf(Operation) implies
+let replyParms : OrderedSet(Parameter) = signature.oclAsType(Operation).ownedParameter->
+select(direction = ParameterDirectionKind::inout or direction = ParameterDirectionKind::out
+or direction = ParameterDirectionKind::return)
+in replyParms->size() = self.argument->size() and
+self.argument->forAll( o: ValueSpecification | o.oclIsKindOf(Expression) and let e :
+Expression = o.oclAsType(Expression) in
+e.operand->notEmpty() implies
+let p : Parameter = replyParms->at(self.argument->indexOf(o)) in
+e.operand->asSequence()-
+>first().type.oclAsType(Classifier).conformsTo(p.type.oclAsType(Classifier))
+)",
+"An Actor can only have Associations to UseCases, Components, and Classes. Furthermore these Associations
+must be binary.","Association.allInstances()->forAll( a |
+a.memberEnd->collect(type)->includes(self) implies
+(
+a.memberEnd->size() = 2 and
+let actorEnd : Property = a.memberEnd->any(type = self) in
+actorEnd.opposite.class.oclIsKindOf(UseCase) or
+( actorEnd.opposite.class.oclIsKindOf(Class) and not
+actorEnd.opposite.class.oclIsKindOf(Behavior))
+)
+)",
+An Actor must have a name.,name->notEmpty(),
+The ExtensionPoints referenced by the Extend relationship must belong to the UseCase that is being extended.,extensionLocation->forAll (xp | extendedCase.extensionPoint->includes(xp)),
+An ExtensionPoint must have a name.,name->notEmpty (),
+UseCases can only be involved in binary Associations.,"Association.allInstances()->forAll(a | a.memberEnd.type->includes(self) implies
+a.memberEnd->size() = 2)",
+UseCases cannot have Associations to UseCases specifying the same subject.,"Association.allInstances()->forAll(a | a.memberEnd.type->includes(self) implies
+(
+let usecases: Set(UseCase) = a.memberEnd.type->select(oclIsKindOf(UseCase))-
+>collect(oclAsType(UseCase))->asSet() in
+usecases->size() > 1 implies usecases->collect(subject)->size() > 1
+)
+)",
+A UseCase cannot include UseCases that directly or indirectly include it.,not allIncludedUseCases()->includes(self),
+A UseCase must have a name.,name -> notEmpty (),
+The association ends of a CommunicationPath are typed by DeploymentTargets.,endType->forAll (oclIsKindOf(DeploymentTarget)),
+The DeploymentTarget of a DeploymentSpecification is a kind of ExecutionEnvironment.,deployment->forAll (location.oclIsKindOf(ExecutionEnvironment)),
+"The deployedElements of a DeploymentTarget that are involved in a Deployment that has an associated
+Deployment-Specification is a kind of Component (i.e., the configured components).",deployment->forAll (location.deployedElement->forAll (oclIsKindOf(Component))),
+The internal structure of a Node (if defined) consists solely of parts of type Node.,part->forAll(oclIsKindOf(Node)),
+"The sources and targets of the information flow can only be one of the following kind: Actor, Node, UseCase,
+Artifact, Class, Component, Port, Property, Interface, Package, ActivityNode, ActivityPartition, Behavior and
+InstanceSpecification except when its classifier is a relationship (i.e. it represents a link).","(self.informationSource->forAll( sis |
+oclIsKindOf(Actor) or oclIsKindOf(Node) or oclIsKindOf(UseCase) or oclIsKindOf(Artifact)
+or
+oclIsKindOf(Class) or oclIsKindOf(Component) or oclIsKindOf(Port) or oclIsKindOf(Property)
+or
+oclIsKindOf(Interface) or oclIsKindOf(Package) or oclIsKindOf(ActivityNode) or
+oclIsKindOf(ActivityPartition) or
+(oclIsKindOf(InstanceSpecification) and not
+sis.oclAsType(InstanceSpecification).classifier->exists(oclIsKindOf(Relationship)))))
+and
+(self.informationTarget->forAll( sit |
+oclIsKindOf(Actor) or oclIsKindOf(Node) or oclIsKindOf(UseCase) or oclIsKindOf(Artifact)
+or
+oclIsKindOf(Class) or oclIsKindOf(Component) or oclIsKindOf(Port) or oclIsKindOf(Property)
+or
+oclIsKindOf(Interface) or oclIsKindOf(Package) or oclIsKindOf(ActivityNode) or
+oclIsKindOf(ActivityPartition) or
+(oclIsKindOf(InstanceSpecification) and not sit.oclAsType(InstanceSpecification).classifier-
+>exists(oclIsKindOf(Relationship)))))",
+An information flow can only convey classifiers that are allowed to represent an information item.,"self.conveyed->forAll(oclIsKindOf(Class) or oclIsKindOf(Interface)
+or oclIsKindOf(InformationItem) or oclIsKindOf(Signal) or oclIsKindOf(Component))",
+"The sources and targets of an information item (its related information flows) must designate subsets of the
+sources and targets of the representation information item, if any. The Classifiers that can realize an
+information item can only be of the following kind: Class, Interface, InformationItem, Signal, Component.","(self.represented->select(oclIsKindOf(InformationItem))->forAll(p |
+p.conveyingFlow.source->forAll(q | self.conveyingFlow.source->includes(q)) and
+p.conveyingFlow.target->forAll(q | self.conveyingFlow.target->includes(q)))) and
+(self.represented->forAll(oclIsKindOf(Class) or oclIsKindOf(Interface) or
+oclIsKindOf(InformationItem) or oclIsKindOf(Signal) or oclIsKindOf(Component)))",
+"An informationItem has no feature, no generalization, and no associations.",self.generalization->isEmpty() and self.feature->isEmpty(),
+It is not instantiable.,isAbstract,
+isFrame and isActivityFrame must not be true at the same time.,not (isActivityFrame and isFrame),
+modelElement must be an Association end.,not modelElement->forAll(association->isEmpty()),
+UMLAssociationOrConnectorOrLinkShapes must have exactly one modelElement.,modelElement->size()=1,
+"modelElement must be an Association, Connector, or InstanceSpecification with an Association classifier.","modelElement->asSequence()->first().oclIsKindOf(Association) or modelElement-
+>asSequence()->first().oclIsKindOf(Connector)
+or ( modelElement->asSequence()->first().oclIsKindOf(InstanceSpecification)
+and (modelElement->asSequence()->first().oclAsType(InstanceSpecification).classifier-
+>select(oclIsKindOf(Association))->size() > 0))",
+"For diamond kind and an Association modelElement, the Association has exactly two memberEnds, and
+exactly two of the UMLEdges linked to the shape have those memberEnds as modelElements.","(kind=UMLAssociationOrConnectorOrLinkShapeKind::diamond and modelElement-
+>forAll(oclIsKindOf(Association))) implies
+let association : Association = modelElement->any(true).oclAsType(Association) in
+((association.memberEnd->size() = 2) and
+(sourceEdge.modelElement->union(targetEdge.modelElement)->select(em |
+association.memberEnd->includes(em))->size()=2))",
+"For diamond kind and an InstanceSpecification modelElement, exactly one Association classifier of the
+InstanceSpecification has exactly two memberEnds and exactly two of the UMLEdges linked to the shape have
+those memberEnds as modelElements.","(kind=UMLAssociationOrConnectorOrLinkShapeKind::diamond and modelElement-
+>forAll(oclIsKindOf(InstanceSpecification))) implies
+let instanceSpecification : InstanceSpecification = modelElement-
+>any(true).oclAsType(InstanceSpecification) in
+(instanceSpecification.classifier->select(a | a.oclIsKindOf(Association) and
+(a.oclAsType(Association).memberEnd->size() = 2) and
+(sourceEdge.modelElement->union(targetEdge.modelElement)
+->select(e | a.oclAsType(Association).memberEnd->includes(e.modelElement))
+->size()=2))
+->size()=1)",
+"For diamond kind and a Connector modelElement, the Connector has exactly two ends, and exactly two of the
+UMLEdges linked to the shape have definingEnds of those ends as modelElements.","(kind=UMLAssociationOrConnectorOrLinkShapeKind::diamond and modelElement-
+>forAll(oclIsKindOf(Connector))) implies
+let connector : Connector = modelElement->any(true).oclAsType(Connector) in
+((connector.end->size() = 2) and
+(sourceEdge.modelElement->union(targetEdge.modelElement)->select(em |
+connector.end.definingEnd->includes(em))->size()=2))",
+UMLAssociationOrConnectorOrLinkShapes must have exactly one modelElement.,modelElement->size()=1,
+"modelElement must be an Association, Connector, or InstanceSpecification with an Association classifier.","modelElement->asSequence()->first().oclIsKindOf(Association) or modelElement-
+>asSequence()->first().oclIsKindOf(Connector)
+or ( modelElement->asSequence()->first().oclIsKindOf(InstanceSpecification)
+and (modelElement->asSequence()->first().oclAsType(InstanceSpecification).classifier-
+>select(oclIsKindOf(Association))->size() > 0))",
+"For diamond kind and an Association modelElement, the Association has exactly two memberEnds, and
+exactly two of the UMLEdges linked to the shape have those memberEnds as modelElements.","(kind=UMLAssociationOrConnectorOrLinkShapeKind::diamond and modelElement-
+>forAll(oclIsKindOf(Association))) implies
+let association : Association = modelElement->any(true).oclAsType(Association) in
+((association.memberEnd->size() = 2) and
+(sourceEdge.modelElement->union(targetEdge.modelElement)->select(em |
+association.memberEnd->includes(em))->size()=2))",
+"For diamond kind and an InstanceSpecification modelElement, exactly one Association classifier of the
+InstanceSpecification has exactly two memberEnds and exactly two of the UMLEdges linked to the shape have
+those memberEnds as modelElements.","(kind=UMLAssociationOrConnectorOrLinkShapeKind::diamond and modelElement-
+>forAll(oclIsKindOf(InstanceSpecification))) implies
+let instanceSpecification : InstanceSpecification = modelElement-
+>any(true).oclAsType(InstanceSpecification) in
+(instanceSpecification.classifier->select(a | a.oclIsKindOf(Association) and
+(a.oclAsType(Association).memberEnd->size() = 2) and
+(sourceEdge.modelElement->union(targetEdge.modelElement)
+->select(e | a.oclAsType(Association).memberEnd->includes(e.modelElement))
+->size()=2))
+->size()=1)",
+"For diamond kind and a Connector modelElement, the Connector has exactly two ends, and exactly two of the
+UMLEdges linked to the shape have definingEnds of those ends as modelElements.","(kind=UMLAssociationOrConnectorOrLinkShapeKind::diamond and modelElement-
+>forAll(oclIsKindOf(Connector))) implies
+let connector : Connector = modelElement->any(true).oclAsType(Connector) in
+((connector.end->size() = 2) and
+(sourceEdge.modelElement->union(targetEdge.modelElement)->select(em |
+connector.end.definingEnd->includes(em))->size()=2))",
+UMLClassDiagrams must have no modelElements.,modelElement->isEmpty(),
+isDoubleSided may be true only when modelElement is an active Class.,"isDoubleSided implies (modelElement->forAll(oclIsKindOf(Class)) and
+modelElement.oclAsType(Class)->forAll(isActive))",
+UMLCompartments have no modelElements.,modelElement->isEmpty(),
+UMLCompositeStructureDiagrams must have exactly one modelElement.,modelElement->size() = 1,
+"modelElement must be a StructuredClassifier or an InstanceSpecification with a classifier that is a
+StructuredClassifier.","modelElement->asSequence()->first().oclIsKindOf(StructuredClassifier)
+or ( modelElement->asSequence()->first().oclIsKindOf(InstanceSpecification)
+and (modelElement->asSequence()->first().oclAsType(InstanceSpecification).classifier-
+>select(c | c.oclIsKindOf(StructuredClassifier))->size() > 0))",
+"UMLDiagrams cannot have headings without frames, or vice-versa.",(isFrame = false) = (heading->isEmpty()),
+The modelElement of the heading is the same as the modelElement of the diagram it heads.,(heading->isEmpty()) or (heading.modelElement = modelElement),
+UMLKeywords must have exactly one modelElement.,modelElement->size() = 1,
+UMLLabels must have no more than one modelElement.,modelElement->size() <= 1,
+UMLLabels must have the value of false for isIcon.,isIcon=false,
+UMLObjectDiagrams must have no modelElement.,modelElement->isEmpty(),
+UMLPackageDiagrams must have no modelElement.,modelElement->isEmpty(),
+UMLProfileDiagrams must have no modelElement.,modelElement->isEmpty(),
+isInheritedDashed and isInheritedLighter cannot both have a value of true.,not (isInheritedDashed and isInheritedLighter),
+"UMLStateShapes may have multiple modelElements only when their outgoing Transitions have no triggers or
+effects, and target the same junction State that has one outgoing Transition.","(modelElement->size() > 1) implies
+( modelElement->forAll(outgoing->forAll(trigger->isEmpty() and
+effect->isEmpty()
+and
+target.oclIsKindOf(Pseudostate) and
+target.oclAsType(Pseudostate).kind = PseudostateKind::junction and
+target.outgoing-
+>size() = 1))
+and modelElement.outgoing.target->asSet()->size()=1)",
+modelElement is a Property of a Stereotype.,modelElement->forAll(classifier.oclIsKindOf(Stereotype)),
+fontSize must be greater than zero.,fontSize > 0,
+UMLTypedElementLabels must have exactly one modelElement.,modelElement->size() = 1,
+UMLUseCaseDiagrams must have no modelElements.,modelElement->isEmpty(),
+"The referenceUnit shall not be a PrefixedUnit, i.e., it is not allowed to prefix an already prefixed
+measurement unit. In general the referenceUnit should be a SimpleUnit.
+",not referenceUnit.oclIsTypeOf(PrefixedUnit),
+The denominator of a rational number shall not be zero.,denominator <> 0,
+A QuantityKind cannot be defined in terms of itself. This follows from the quantity calculus used for expressing a derived QuantityKind in terms of base QuantityKinds chosen for a SystemOfQuantities by means of non- contradictory equations,"dependsOnQuantityKinds()->excludes(self)
+",
+"For a QuantityKind to have a provenance to a single SystemOfQuantities, all included systems of quantities
+shall be transitively disjoint with all used systems of quantities.","allIncludedSystemOfQuantities()->intersection(self.oclAsSet()
+->closure(usedSystemOfQuantities))->isEmpty()",
+"The set of all QuantityKinds in a given SystemOfQuantities shall be partitioned into two disjoint, covering subsets: 
+the set of base QuantityKinds (typically chosen to be mutually independent) and its complement, the 
+set of derived QuantityKinds, each of which can be expressed in terms of the base QuantityKinds",allQuantityKinds()->includesAll(allBaseQuantityKinds()),
+" Every QuantityKind shall be defined in only one SystemOfQuantities but it can be in the scope of several 
+SystemOfQuantities. A given QuantityKind is in scope of a SystemOfQuantities either because it is defined or used in a 
+SystemOfQuantities or because it is included from the scope of another SystemOfQuantities.","includedSystemOfQuantities->collect(allQuantityKinds())
+->intersection(quantityKind)->isEmpty()",
+"For a QuantityKind to have a provenance to a single SystemOfQuantities, the use and includes relationships among 
+SystemOfQuantities shall be acyclic.",allAccessibleSystemOfQuantities()->excludes(self),
+" In a well-formed SystemOfUnits, all of the prefixes of PrefixedUnits shall be defined in the SystemOfUnits.","allPrefixes()->includesAll(allUnits()->select(oclIsTypeOf(PrefixedUnit))
+->collect(oclAsType(PrefixedUnit).prefix))",
+All the dependent Units of a SystemOfUnits shall be in the scope of that SystemOfUnits.,allUnits()->includesAll(allUnits()->collect(dependsOnUnits())->flatten()->asSet()),
+" All of the quantityKinds that are measurementUnits of Units in the SystemOfUnits shall be defined in the 
+systemOfQuantities of that SystemOfUnits.","getEffectiveSystemOfQuantities() = null or let aqk : Set(QuantityKind) = 
+getEffectiveSystemOfQuantities().allQuantityKinds() in ->allUnits()
+->forAll(u | aqk
+->includesAll(getKindOfQuantitiesForMeasurementUnit(u)))",
+"For a Unit to have a provenance to a single SystemOfUnits, all included systems of units shall be transitively disjoint 
+with all used systems of units.","allIncludedSystemOfUnits()->intersection(self.oclAsSet()
+->closure(usedSystemOfUnits))->isEmpty()",
+" The set of all Units in a given SystemOfUnits shall be capable of being partitioned into two disjoint, covering subsets: 
+the set of base Units (typically chosen to be mutually independent) and all its complement, the set of derived Units, each 
+of which can be expressed in terms of the base Units",allUnits()->includesAll(allBaseUnits()),
+"Every Unit shall be defined in only one SystemOfUnits but it can be in the scope of several SystemOfUnits. A given 
+Unit is in scope of a SystemOfUnits either because it is defined or used in a SystemOfUnits or because it is included 
+from the scope of another SystemOfUnits.",includedSystemOfUnits->collect(allUnits())->intersection(unit)->isEmpty()),
+" For a Unit to have a provenance to a single SystemOfUnits, the use and includes relationships among SystemOfUnits 
+shall be acyclic.",allAccessibleSystemOfUnits()->excludes(self),
+"A Unit cannot be defined in terms of itself. This follows from the requirement that, in a coherent SystemOfUnits, the Units of all derived QuantityKinds are expressed in terms of the base Units in accordance with the equations in the SystemOfQuantities",dependsOnUnits()->excludes(self),
+A Constraint must be owned as a guard by a Transition and its constrainedElements must be empty.,"self.owner.oclIsKindOf(UML::StateMachines::Transition) and
+self.constrainedElement->isEmpty()",
+The OpaqueExpression must have a behavior.,self.behavior <> null,
+The Expression must have no operands and its symbol must be “else”.,self.symbol = 'else' and self.operand->isEmpty(),
+"If an Operation is abstract, it must have no method. Otherwise it must not have more than one method and it must have 
+exactly one method unless owned by an active Class.","if self.isAbstract then self.method->isEmpty()
+else
+self.method->size() <= 1 and
+((self.class = null or not self.class.isActive) implies
+self.method->size() = 1)
+endif",
+"A StateMachine may not be a method and, if it has a context, it must be a classifierBehavior for that context.","self.specification = null and
+self._'context' <> null implies self._'context'.classifierBehavior = self",
+The triggers of a Transition must all be for CallEvents or SignalEvents.,"self.trigger.event->forAll(
+oclIsKindOf(UML::CommonBehavior::CallEvent) or
+oclIsKindOf(UML::CommonBehavior::SignalEvent)
+)",
+"The Operations of any CallEvents on the triggers of a Transition must be owned or inherited by the context of the 
+containing StateMachine.","let stateMachine = self.containingStateMachine() in
+let context_ =
+if stateMachine._'context' = null then stateMachine
+else stateMachine._'context'
+endif in
+context_.allFeatures()->includesAll(
+self.trigger->select(oclIsKindOf(UML::CommonBehavior::CallEvent)).
+oclAsType(UML::CommonBehavior::CallEvent).operation
+)",
+"The Signals of any SignalEvents on the triggers of a Transition must have matching Receptions that are owned or 
+inherited by the context of the containing StateMachine of the Transition.","let stateMachine = self.containingStateMachine() in
+let context_ =
+if stateMachine._'context' = null then stateMachine
+else stateMachine._'context'
+endif in
+context_.allFeatures()->select(oclIsKindOf(UML::SimpleClassifiers::Reception)).
+oclAsType(UML::SimpleClassifiers::Reception).signal->includesAll(
+self.trigger->select(oclIsKindOf(UML::CommonBehavior::SignalEvent)).
+oclAsType(UML::CommonBehavior::SignalEvent).signal
+)",
+A State must not have a submachine.,not self.isSubmachineState,
+A State must not have a stateInvariant.,self.stateInvariant = null,
+A doActivity Behavior of a State can only have in parameters.,"self.doActivity <> null implies
+self.doActivity.ownedParameter->forAll(direction =
+ParameterDirectionKind::_'in')",
+A StateMachine must not have more than one extendedStateMachine,self.extendedStateMachine->size() <= 1,
+every customer who enters a loyalty program be of legal age.,age >= 18,
+the number of valid cards for every customer must be equal to the number of programs in which the customer participates. ,"programs->size() = cards->select( valid = true )->size()
+",
+male Customers must be approached using the title 'Mr.'.,gender = Gender::male implies title = 'Mr.',
+validFrom should be earlier than goodThru,validFrom.isBefore(goodThru),
+selects all transactions on a CustomerCard that have more than 100 points,self.transactions->select( points > 100 )->notEmpty(),
+a membership must be one of the service levels of the program to which the membership belongs,"programs.levels ->includes(currentLevel)
+",
+the actual service level of a membership must always be a service level of the loyalty program ,programs.levels->includes(currentLevel),
+the service level of each membership must be a service level known to the loyalty program,"levels->  includesAll(Membership.currentLevel)
+",
+the color of this card must match the service level of the membership,"currentLevel.name = 'Silver' implies card.color = Color::silver
+    and
+    currentLevel.name = 'Gold' implies card.color = Color::gold",
+a loyalty program offers at least one service to its customers,partners.deliveredServices->size() >= 1,
+"if none of the services offered in a LoyaltyProgram credits or debits the LoyaltyAccount instances, then these instances are useless and should not be present","partners.deliveredServices->forAll(
+                pointsEarned = 0 and pointsBurned = 0 )
+                             implies Membership.account->isEmpty()",
+the first element of this ordered set must be named Silver as follows,levels->first().name = 'Silver',
+there is at least one ServiceLevel with the name 'basic',self.levels->exists(name = 'basic'),
+"the number of participants in a loyalty program must be less than 10,000",self.participants->size() < 10000,
+the number of the loyalty account must be unique within a loyalty program,self.Membership.account->isUnique( acc | acc.number ) ,
+the names of all customers of a loyalty program are different,"self.participants->forAll(c1, c2 |
+                           c1 <> c2 implies c1.name <> c2.name)",
+the age of all participants in a loyalty program is less than or equal to 70,participants->forAll( age() <= 70 ),
+"there may be only one loyalty account that has a number lower than 10,000",self.Membership.account->one( number < 10000 ),
+the attribute numberOfCustomers of class ProgramPartner. We want to state that this attribute holds the number of customers who participate in one or more loyalty programs offered by this program partner. ,"numberOfCustomers = programs.participants->asSet()->size()
+",
+"the maximum number of points that may be earned by all services of a program partner is equal to 10,000","deliveredServices.transactions       -- all transactions
+   ->select( oclIsTypeOf( Earning ) ) -- select earning ones
+              .points->sum()               -- sum all points
+              < 10,000                -- sum smaller than 10,000",
+all cards that generate transactions on the loyalty account must have the same owner,transactions.card.owner->asSet()->size() = 1,
+"if the attribute points is greater than zero, there exists a Transaction with points greater than zero",points > 0 implies transactions->exists(t | t.points > 0),
+you could demand that at least one of the values be 500,"transactions->collect( points )->
+                        exists( p : Integer | p = 500 )",
+the available services for a service level must be offered by a partner of the loyalty program to which the service level belongs,"program.partners
+             ->includesAll(self.availableServices.partner)",
+"A signature (set of Parameters) conforms to a collection of Triggers if one of the following is true: the signature is empty;
+all the Triggers are for SignalEvents and the signature has exactly one Parameter of direction in, has multiplicity upper 
+bound of 1 and is either untyped or has a type that is a Signal that conforms to all the Signals of the Triggers; or all 
+theTriggers are for CallEvents and the signature conforms to or input-conforms to all the signatures of the Operations of 
+the CallEvents. (A signature input-conforms to another if the first signature conforms to the signature containing only the 
+in Parameters from the second signature).","conformsToAll(
+signature : OrderedSet(UML::Classification::Parameter),
+triggers : Collection(UML::CommonBehavior::Trigger)) : Boolean =
+signature->isEmpty() or
+triggers.event->forAll(oclIsKindOf(UML::CommonBehavior::SignalEvent)) and
+signature->size() = 1 and
+(let parameter = signature->at(1) in
+parameter.direction = UML::Classification::ParameterDirectionKind::_'in'
+and
+parameter.is(1,1) and
+(parameter.type = null or
+triggers.event.oclAsType(UML::CommonBehavior::SignalEvent).signal-
+>forAll(s |
+parameter.type.conformsTo(s)
+))) or
+triggers.event->forAll(oclIsKindOf(UML::CommmonBehavior::CallEvent)) and
+triggers.event.oclAsType(UML::CommmonBehavior::CallEvent).operation->
+forAll(operation |
+conforms(signature, operation.ownedParameter) or
+conforms(signature, operation.ownedParameter->select(
+direction = UML::Classification::ParameterDirectionKind::_'in'
+)))",
+"One signature conforms to another if the first signature has the same number of Parameters as the second signature, and 
+each Parameter of the first signature has the same direction, ordering and uniqueness as the corresponding Parameter (in 
+order) from the second signature and a type and multiplicity that are compatible with those of the corresponding 
+Parameter (depending on the Parameter direction).","conforms(
+signature1 : OrderedSet(UML::Classification::Parameter),
+signature2 : OrderedSet(UML::Classification::Parameter)) : Boolean =
+signature1->size() = signature2->size() and
+Sequence{1..signature1->size()} -> forAll(i |
+let parameter1 = signature1->at(i) in
+let parameter2 = signature2->at(i) in
+parameter1.direction = parameter2.direction and
+parameter1.isOrdered = parameter2.isOrdered and
+parameter1.isUnique = parameter2.isUnique and
+(parameter2.direction = UML::Classification::ParameterDirectionKind::_'in'
+implies
+ parameter2.type = null or
+ parameter2.type <> null and
+ parameter2.type.conformsTo(parameter1.type) and
+ parameter2.compatibleWith(parameter1)) and
+(parameter1.direction = UML::Classification::ParameterDirectionKind::out or
+parameter1.direction = UML::Classification::ParameterDirectionKind::return
+implies
+ parameter1.type = null or
+ parameter1.type <> null and
+parameter1.type.conformsTo(parameter2.type) and
+parameter1.compatibleWith(parameter2)) and
+(parameter1.direction = UML::Classification::ParameterDirectionKind::inout
+implies
+ parameter1.type = parameter2.type and
+ parameter2.compatibleWith(parameter1) and
+ parameter1.compatibleWith(parameter2))
+)",
+upperValue must be a LiteralUnlimitedNatural and lowerValue must be a LiteralInteger. Both are required.,"self.upperValue->notEmpty() and
+self.upperValue->asSequence()->first().oclIsKindOf(LiteralUnlimitedNatural) and
+self.lowerValue->notEmpty() and
+self.lowerValue->asSequence()->first().oclIsKindOf(LiteralInteger)",
+concurrency must be sequential,self.concurrency = CallConcurrencyKind::sequential,
+isStatic must be false,not self.isStatic,
+"Either all the classifiers are classes, or there is one classifier that is a data type","self.classifier->forAll(oclIsKindOf(Class)) or
+self.classifier->size() = 1 and self.classifier->forAll(oclIsKindOf(DataType))",
+"If an operation is abstract, it must have no method. Otherwise it must not have more than one method and it must have 
+exactly one method unless owned by an active class.","If self.isAbstract then self.method->isEmpty() 
+else
+ self.method->size() <= 1 and
+ ((self.class = null or not self.class.isActive) implies
+ self.method->size() = 1)
+endif",
+isException must be false,not self.isException,
+isDerived and isDerivedUnion must be false,not self.isDerived and not self.isDerivedUnion,
+A reception must not have an associated method.,self.method->isEmpty(),
+A reception must not be abstract.,not self.isAbstract,
+isDerived must be false,not self.isDerived,
+Only active classes may have classifier behaviors.,self.classifierBehavior→notEmpty() implies self.isActive,
+Only an active class may specialize an active class.,self.parents()->exist(isActive) implies self.isActive,
+Only an abstract class may have abstract behavioral features.,self.member->select(oclIsKindOf(BehavioralFeature))->exists(isAbstract) implies self.isAbstract,
+"In this specification, a fUML instance model must have Behavior.isReentrant",self.isReentrant,
+body and language must be empty,self.language->isEmpty() and self.body->isEmpty(),
+An opaque behavior cannot be active.,not self.isActive,
+"An activity may be active, but cannot have a classifier behavior.",self.classifierBehavior->isEmpty(),
+isSingleExecution must be false.,not self.isExecution,
+A guard is only allowed if the source of the edge is a DecisionNode.,self.guard->notEmpty() implies self.source.oclIsKindOf(DecisionNode),
+isCombineDuplicate must be false,not self.isCombineDuplicate,
+isMulticast and isMultireceive must be false,not self.isMulticast and not self.isMultireceive,
+ordering must be FIFO,self.ordering = ObjectNodeOrderingKind::FIFO,
+isControlType must be false,not self.isControlType,
+"The operations of the call events on the triggers of an accept call action must be owned or inherited by the context class of 
+the action.","let cls: Class = self.context.oclAsType(Class) in
+let classes:Bag(Class) = cls.allParents()->select(oclIsKindOf(Class))->collect(oclAsType(Class))->union(cls->asBag()) in
+classes.ownedOperation→includesAll(self.trigger.event→collect(oclAsType(CallEvent)).operation)",
+The context of the containing activity of the accept event action must be an active class.,self.context.oclAsType(Class).isActive,
+An accept event action may not be contained directly or indirectly in the test part of a clause or loop node.,"self->closure(inStructuredNode.oclAsType(ActivityNode))->forAll(n |
+let s : StructuredActivityNode = n.inStructuredNode in
+ s->notEmpty() implies
+(s.ocllsTypeOf(ConditionalNode) implies s.oclAsType(ConditionalNode).clause.test->
+excludes(n.oclAsType(ExecutableNode)) and
+s.ocllsTypeOf(LoopNode) implies s.oclAsType(LoopNode).test->excludes(n.oclAsType(ExecutableNode))))",
+"Unless the action is an accept call action, all triggers must be for signal events.","not self.oclIsKindOf(AcceptCallAction) implies
+self.trigger.event->forAll(oclIsKindOf(SignalEvent))",
+The behavior may not be active.,not self.behavior.isActive,
+isSynchronous must be true,self.isSynchronous,
+"If the behavior has a context, it must be the same as the context of the enclosing activity or a (direct or indirect) superclass 
+of it.","self.behavior.context->notEmpty() implies
+ self.context->union(self.context.allParents())->includes(self.behavior.context)",
+isSynchronous must be true,self.isSynchronous,
+The given classifier must be a class.,self.classifier.oclIsKindOf(Class),
+The given classifier must not be an owned behavior (or otherwise have a context classifier).,self.classifier.oclIsKindOf(Behavior) implies self.classifier.oclAsType(Behavior).context = null,
+mode cannot be stream,self.mode <> ExpansionKind::stream,
+Edges may not cross into or out of an expansion region,self.edge->forAll(self.node->includes(source) and self.node→includes(target)),
+An expansion region may not have output pins.,self.output->isEmpty(),
+no setupParts in fUML,self.setupPart->isEmpty(),
+isControl must be false,not self.isControl,
+The classifier must be a class.,self.classifier.oclIsKindOf(Class),
+All the old and new classifiers must be classes.,self.oldClassifier->forAll(oclIsKindOf(Class)) and self.newClassifier→forAll(oclIsKindOf(Class)),
+isSynchronous must be false.,not self.isSynchronous,
+"The example rule checks every transaction amount in the message and if the number of occurencies of the value 30 is 2, true will be returned.",self.Transaction.Amount->count(30) = 2,
+"The example rule checks every transaction amount in the message and if the amount 30 is not found, true will be returned.",self.Transaction.Amount->excludes(30),
+"The example rule checks every transaction in the message and if one of the amounts is greater than 100, true will be returned. First a variable ""a"" is declared for the individual transaction. The condition statement is separated with a ""|""-sign. Then the statement is checked for every transaction in the message. If one of the amounts is greater than 100, true will be returned.", self.Transaction->exists(a|a.Amount > 100),
+"The example rule checks every transaction in the message if the amount is greater than 30. First a variable ""a"" is declared for the individual transaction. The condition statement is separated with a ""|""-sign. Then the statement is checked for every transaction in the message. If all of the amounts are greater than 30, true will be returned.",self.Transaction->forAll(a|a.Amount > 30),
+"The example rule checks every transaction amount in the message and if the amount 30 is found, true will be returned.",self.Transaction.Amount->includes(30),
+The example rule mandates the usage of both Creditor Name. I.e. the size of occurrence number of element Creditor / Name has to be 1.,self.Creditor.Name->size() = 1,
+" The example sums every transaction amount in the message if the amounts are valid type and compares them to the integer. If the sum is 100, true will be returned.",self.Transaction.Amount->sum() = 100,
+The example rule returns the absolut value of the first transaction amount and compares it to the right side operand. It's assumed that the value can be negative (this may not be the case in every situation). ,self.Transaction.at(0).Amount.abs() = 30,
+"The example rule compares the date of <TimeStamp> to the date of <Dt>. If the date of  <TimeStamp> is after the date of <Dt>, true will be returned.",self.TimeStamp.after(self.Dt),
+"The example rule checks every transaction amount in the message and if the number of instances is two, true will be returned. The size method returns the size of the set returned by the allInstances method. ",self.Transaction.Amount.allInstances()->size() = 2 ,
+ The example rule checks if the date of <Dt> is within 3 days from the system date., self.Dt.allowedDaysInFuture(3),
+The example rule checks if the date of <Dt> is within 3 days from the system date.,self.Dt.allowedDaysInPast(3),
+"The example rule compares the date of <TimeStamp> to the date of <Dt>. If the date of  <TimeStamp> is before the date of <Dt>, true will be returned.", self.Timestamp.before(self.Dt),
+"Example rule expects the position 1 (the second character in string) to contain ""A"".","self.Id.charAt(1) = ""A""",
+"Example rule expects the value of Id to contain characters ""aaaa"".","self.Id.compareTo(""aaaa"") = 0",
+"Example rule expects the value of Id to contain characters ""aaaa"", ignoring case considerations.","self.Id.compareToIgnoreCase(""aaaa"") = 0",
+"This rule takes debtor name and concatenates it with creditor name, and then verifies that Id contains the concatenated string", self.Debtor.Name.concat(self.Creditor.Name) = self.Id,
+The example rule checks if the value if element <Id> contains character sequence 'content'.,self.Id.contains('content'),
+The example decodes the <AttachmentContent> field value and checks that the length of the decoded value does not exceed 1024 characters.,self.AttachmentContent.decodeBase64().size() <= 1024,
+" The rule is checking if the value of the encoding attribute in XML declaration is ""UTF-8"". If it's not, an error will be given."," self.encoding() = ""UTF-8""",
+ The example rule checks if the value of <Id> ends with character a., self.Id.endsWith('a'),
+" The example rule compares the intiger quotient of the amount to the integer 30. If the integer quotient is 30, true will be returned. 
+",self.Amount.floor() = 30,
+ The example rule checks if the element <Dt> has a value.,self.Dt.hasValue(),
+ The rule here checks if character a is found from the value of element <Id>. The rule passes if character a is not found as then the lastIndexOf method returns value -1.,self.Id.indexOf('a') = -1,
+The example rule checks if a DTD is given.,self.isDTDPresent(),
+The example rule checks if the <Id> element value is integer or decimal. The rule returns an error if the value is not numeric.,self.Id.isNumeric(),
+The example rule check if the value of <Id> element contains only characters and not digits.,self.Id.isOnlyChars(),
+The example rule checks if the given country code is valid.,self.PstlAdr.Ctry.isValidCountryCode(),
+The example rule checks if the given creditor identifier is valid.,self.Creditor.Id.isValidCreditorIdentifierEPC(),
+The example rule checks if the given currency code is valid.,self.Amount.Ccy.isValidCurrencyCode(),
+The example rule checks that the value in dateString field is valid ISO 8601 datetime.,"self.dateTimeString.isValidDate(""yyyy-MM-dd'T'HH:mm:ss.SSSXXX"")",
+The example rule checks if the given IBAN is valid., self.Debtor.IBAN.isValidIBAN(),
+The example rule checks if the given reference is valid.,self.Amount.REF.isValidReference('FI'),
+The example rule checks if the given reference is valid.,self.Amount.REF.isValidRF(),
+The example checks if last string 'content' is found starting from the position 1 of the value of the <Id> element. First position of a string is 0.,self.Id.lastIndexOf('content') = 9,
+"The example rule checks if the string contains only lower case letters from a to z.
+ ",self.Id.matches('[a-z]*'),
+ The example rule compares the larger amount from the first and second transaction amounts to the right side operand. It's assumed that there is at least two transactions. The 'at' method doesn't work with the Bag type so it has to be changed to Sequence.,self.Transaction->asSequence().Amount->at(0).max(self.Transaction->asSequence().Amount->at(1)) = 100,
+ The example rule compares the lowest amount from the first and second transaction amounts to the right side operand. It's assumed that there is at least two transactions. ,self.Transaction.at(0).Amount.min(self.Transaction.at(1).Amount) = 30,
+"The example rule compares the date of <TimeStamp> minus 2 days to the date of <Dt>. If the date of  <TimeStamp> after the reduced days equals the date of <Dt>, true will be returned. This works in the same way with months and years.", self.TimeStamp.minusDays(2) = self.Dt,
+" The example rule compares the date & time of <TimeStamp> minus 2 hours to the date & time of <Dt>. If the date & time of <TimeStamp> after the reduced hours equals the date & time of <Dt>, true will be returned. This works in the same way with minutes and seconds.",self.TimeStamp.minusHours(2) = self.Dt,
+ The example rule checks if the default namespace is 'http://www.XMLdation.com'.,self.namespace() = 'http://www.XMLdation.com',
+The example rule checks if the noNamespaceSchemaLocation is given., self.noNamespaceSchemaLocation()->size() = 1,
+ The example rule checks if the date of <Dt> converted to a string matches the string on the right side of the equation.,self.Dt.oclAsType(string) = '2018-05-28',
+ The example rule checks if the type or supertypes of the value of <Dt> matches the ISO Date type., self.Dt.OclIsKindOf(ISODate),
+ The example rule checks if the type of the value of <Dt> matches the ISO Date type.,self.Dt.oclIsTypeOf(ISODate),
+ The example rule checks if the value of <Dt> is undefined.,self.Dt.oclIsUndefined(),
+" The example rule compares the date of <TimeStamp> plus 2 days to the date of <Dt>. If the date of  <TimeStamp> after the additional days equals the date of <Dt>, true will be returned. This works in the same way with months and years.", self.TimeStamp.plusDays(2) = self.Dt,
+" The example rule compares the date & time of <TimeStamp> plus 2 hours to the date & time of <Dt>. If the date & time of <TimeStamp> after the additional hours equals the date & time of <Dt>, true will be returned. This works in the same way with minutes and seconds.",self.TimeStamp.plusHours(2) = self.Dt,
+"The example rule compares the nearest integer of the amount to the integer 30. If the nearest integer is 30, true will be returned. ", self.Amount.round() = 30,
+ The example rule checks if the schemaLocation attribute is given., self.schemaLocation()->size() = 1,
+ The example rule check the length of the value of <Id> element and check that it is less than or equal to 20.,self.Id.size() <= 20,
+"Rule checks whether the returned collection contains two parts. I.e, whether the given string contains char ""-"" in the middle of the string."," self.Id.split(""-"")->size() = 2",
+The example rule checks if the standalone is 'yes'.,self.standalone() = 'yes',
+The example rule checks if the value of <Id> starts with character a.,self.Id.startsWith('a'),
+" The example rule takes first two characters, i.e. characters starting form index 0 and ending before index 2, from the <Id> element value and compares it to string ""FI"". Returns true if the string starts with ""FI"".","self.Id.substring(0,2) = ""FI""",
+" This rule attempts to convert Id into integer, and then compares it's value to the result of the arithmetic sum of the right side of expression",self.Id.toInteger() = 11 + 11,
+" The example rule converts the value of <Id> element to lower case and compares it to ""idcontent"".","self.Id.toLower() = ""idcontent""",
+"The example rule tries to convert the value of <Id> to a real number and then compares it to the number 100,01. If <Id> is convertable and matches 100,01, true will be returned.",self.Id.toReal() = 100.01,
+ In this example the value of <AttachmentSecureHash> field found from the file is compared to the SHA-1 hash value which is calculated from the value of <AttachmentContent> element of the file., self.AttachmentSecureHash = self.AttachmentContent.toSHA1(),
+" The example rule checks if the date of <Dt> matches the string '2018-05-28', when converted to a string.",self.Dt.toString() = '2018-05-28',
+" The example rule converts <Id> elements value to upper case and compares it to string ""IDCONTENT""
+ "," self.Id.toUpper() = ""IDCONTENT""",
+" The example rule executes trim to the <Id> element and compares the result to a string ""IdContent""."," self.Id.trim() = ""IdContent""",
+" The rule is checking if the value of the version attribute in XML declaration is ""1.0"". If it's not, an error will be given.","self.version() = ""1.0""",
+" The example rule checks whether any element within the header contains value ""2015"".", self.xmlData.contains() = 2015,
+The example rule checks the combined lenght of element values from PartyIdentification child elements.,self.xmlDataSize() = 24,
+The example rule checks the lenght of PartyIdentification content including tags and values.,self.xmlElementBlockSize() = 17,
+" The example rule compares value of <Id> element to a string ""IdContent"".","self.Id = ""IdContent""",
+" The example rule compares value of <Id> element to a string ""IdContent"". The value is expected to be different from the string, otherwise an error will be returned by the rule.
+ ","self.Id <> ""IdContent""",
+" Compares the value of ControlSum against the sum of values in Transaction, which is defined to be in collection type bag.","self.Header.ControlSum =
+self.Transaction->asBag().Amount->sum()",
+" The example rule compares the integer quotient of the division of the <Id> and 9 to the integer 3. If the integer quotient is 3, true will be returned. Notice the syntax is different from the normal syntax of methods. 
+",self.Id.toInteger() div 9 = 3,
+ The example rule mandates the usage of both Creditor and Debtor name when Amount exceeds 200,"self.Amount > 200 implies
+
+self.Debtor.Name->size() = 1 and self.Creditor.Name->size() = 1",
